@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nélida AI - Login</title>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
+            authDomain: "nelida-e89d3.firebaseapp.com",
+            projectId: "nelida-e89d3",
+            storageBucket: "nelida-e89d3.firebasestorage.app",
+            messagingSenderId: "135147571928",
+            appId: "1:135147571928:web:347838ce007dac458225ad"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        const googleProvider = new GoogleAuthProvider();
+        const facebookProvider = new FacebookAuthProvider();
+
+        const guardarUsuario = async (user) => {
+            try {
+                const paisDetectado = navigator.language || "es-AR";
+                await setDoc(doc(db, "usuarios", user.uid), {
+                    nombre: user.displayName || "Usuario Nuevo",
+                    email: user.email,
+                    foto: user.photoURL || "",
+                    pais: paisDetectado,
+                    edad: 0,
+                    version_seleccionada: "Pendiente",
+                    ultimoLogin: new Date()
+                }, { merge: true });
+                console.log("Perfil actualizado.");
+            } catch (error) {
+                console.error("Error al guardar:", error);
+            }
+        };
+
+        // Estas líneas aseguran que los botones encuentren las funciones
+        window.loginConGoogle = async () => {
+            try {
+                const result = await signInWithPopup(auth, googleProvider);
+                await guardarUsuario(result.user);
+                window.location.href = "menu.html";
+            } catch (e) { alert("Error Google: " + e.message); }
+        };
+
+        window.loginConFacebook = async () => {
+            try {
+                const result = await signInWithPopup(auth, facebookProvider);
+                await guardarUsuario(result.user);
+                window.location.href = "menu.html";
+            } catch (e) {
+                console.error(e);
+                alert("Error Facebook: " + e.message);
+            }
+        };
+
+        window.authEmail = async () => {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            if(!email || !pass) return alert("Por favor, completa los campos.");
+            try {
+                const result = await signInWithEmailAndPassword(auth, email, pass);
+                await guardarUsuario(result.user);
+                window.location.href = "menu.html";
+            } catch (e) {
+                if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-email') {
+                    try {
+                        const result = await createUserWithEmailAndPassword(auth, email, pass);
+                        await guardarUsuario(result.user);
+                        window.location.href = "menu.html";
+                    } catch (regError) { alert("Error al registrar: " + regError.message); }
+                } else { alert("Error: " + e.message); }
+            }
+        };
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
+        .contenedor { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; }
+        .img-fondo { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: 1; }
+        .columna-izquierda { position: relative; left: 65px; width: 300px; z-index: 10; display: flex; flex-direction: column; gap: 12px; background: rgba(0, 0, 0, 0.4); padding: 20px; border-radius: 20px; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .btn-social { width: 100%; height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3); background: white; color: #333; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-social img { width: 18px; height: 18px; }
+        .btn-facebook { background: #1877F2; color: white; border: none; }
+        .btn-apple { background: #000; color: white; border: none; }
+        .form-auth { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; }
+        input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: rgba(255,255,255,0.95); font-size: 13px; }
+        .btn-entrar { background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <img src="versiones_nelida/sexologa.png" class="img-fondo">
+        <div class="columna-izquierda">
+            <button class="btn-social" onclick="window.loginConGoogle()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Continuar con Google
+            </button>
+            <button class="btn-social btn-facebook" onclick="window.loginConFacebook()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" alt="FB">
+                Continuar con Facebook
+            </button>
+            <button class="btn-social btn-apple">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" style="filter: invert(1);" alt="Apple">
+                Continuar con Apple
+            </button>
+            <div class="form-auth">
+                <input type="email" id="email" placeholder="Correo electrónico">
+                <input type="password" id="pass" placeholder="Contraseña">
+                <button class="btn-entrar" onclick="window.authEmail()">ENTRAR / REGISTRARSE</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
