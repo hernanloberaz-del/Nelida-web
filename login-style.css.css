@@ -1,0 +1,47 @@
+* {
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100% ;
+    height: 100% ;
+    background-color: #000;
+    overflow: hidden;
+}
+
+.box-principal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+.img-full {
+    width: 100%;
+    height: 100%;
+    /* 'fill' estira la imagen a la fuerza a los 4 bordes */
+    object-fit: fill;
+    display: block;
+}
+
+/* BOTONES (Con bordes rojos ahora para que resalten más) */
+.hitbox {
+    position: absolute;
+    left: 19.5%;
+    transform: translateX(-50%);
+    width: 32%;
+    height: 7%;
+    background: rgba(255, 0, 0, 0.3); /* Rojo para que los veas bien */
+    border: 2px solid red;
+    cursor: pointer;
+    border-radius: 30px;
+    z-index: 99;
+}
+
+/* Posiciones verticales */
+.google { top: 51%; }
+.facebook { top: 61.5%; }
+.apple { top: 72%; }

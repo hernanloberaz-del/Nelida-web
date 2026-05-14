@@ -1,0 +1,56 @@
+<script type="module">
+    // ... (mantén tus imports y config de Firebase igual)
+
+    window.enviar = async () => {
+        const input = document.getElementById('userInput');
+        const zona = document.getElementById('zona-mensajes');
+        const texto = input.value.trim();
+        if (!texto || !currentUser) return; // Ahora es vital que haya un usuario logueado
+
+        zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
+        input.value = "";
+        zona.scrollTop = zona.scrollHeight;
+
+        const idCarga = "carga-" + Date.now();
+        zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
+
+        historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    contents: historialAcumulado, 
+                    especialidad: facetaActiva,
+                    userId: currentUser.uid // <--- ESTO ES LO NUEVO: Mandamos el ID al peaje
+                })
+            });
+
+            const data = await response.json();
+            document.getElementById(idCarga).remove();
+
+            // LÓGICA DE MURO DE PAGO: Si el servidor dice que llegamos al límite
+            if (data.isPaywall) {
+                zona.innerHTML += `
+                    <div style="margin-bottom: 25px; border-left: 2px solid #ff4d4d; padding: 15px; background: rgba(255,77,77,0.1); border-radius: 10px;">
+                        <p><b>Nélida:</b> ${data.text}</p>
+                        <a href="${data.paymentUrl}" target="_blank" class="btn-pago-pro">ACTIVAR NELIDA PRO</a>
+                    </div>`;
+                hablar(data.text);
+            } 
+            else if (data.candidates && data.candidates[0].content) {
+                const respuesta = data.candidates[0].content.parts[0].text;
+                historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
+                zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuesta)}</div>`;
+                hablar(respuesta); 
+            }
+        } catch (error) {
+            if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+            zona.innerHTML += `<div style="color: #ff4d4d;">Error de enlace.</div>`;
+        }
+        zona.scrollTop = zona.scrollHeight;
+    };
+    
+    // ... (el resto del código igual)
+</script>

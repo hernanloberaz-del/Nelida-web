@@ -1,0 +1,40 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #000000;
+    overflow-x: hidden;
+}
+
+.contenedor-unico {
+    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.imagen-total {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* BOTÓN FINAL INVISIBLE */
+.btn-unico-final {
+    position: absolute;
+    left: 44.5%; 
+    transform: translateX(-50%);
+    top: 3.0%; 
+    width: 19%; 
+    height: 0.5%; 
+    
+    /* Limpieza total del botón */
+    background: transparent; 
+    border: none;
+    cursor: pointer;
+    z-index: 10;
+    outline: none;
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nélida AI - Seleccionar Faceta</title>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
+            authDomain: "nelida-e89d3.firebaseapp.com",
+            projectId: "nelida-e89d3",
+            storageBucket: "nelida-e89d3.firebasestorage.app",
+            messagingSenderId: "135147571928",
+            appId: "1:135147571928:web:347838ce007dac458225ad"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let usuarioActual = null;
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) { usuarioActual = user; } 
+            else { window.location.href = "login.html"; }
+        });
+
+        // HE VUELTO A TUS RUTAS ORIGINALES QUE SÍ FUNCIONABAN
+        const facetas = [
+            { id: "artes_marciales", nombre: "ARTES MARCIALES MIXTAS", desc: "Disciplina y fuerza", img: "versiones_nelida/ARTES MARCIALES MIXTAS.png" },
+            { id: "ayuda", nombre: "Ayuda", desc: "Soporte general", img: "versiones_nelida/ayuda.png" },
+            { id: "contratista", nombre: "Contratista", desc: "Gestión de obras del hogar", img: "versiones_nelida/contratista.PNG" }, 
+            { id: "Economia", nombre: "Economía", desc: "Consejos economicos", img: "versiones_nelida/Economia.PNG" },
+            { id: "infantes", nombre: "Infantes", desc: "Desarrollo infantil", img: "versiones_nelida/infantes.png" },
+            { id: "maestra", nombre: "Maestra", desc: "Educación", img: "versiones_nelida/maestra.png" },
+            { id: "mecanica", nombre: "Mecánica", desc: "Servicio automotriz", img: "versiones_nelida/mecanica.PNG" },
+            { id: "medica", nombre: "Médica", desc: "Salud integral", img: "versiones_nelida/medica.png" },
+            { id: "trainer", nombre: "Nélida Trainer", desc: "Fitness", img: "versiones_nelida/nelida trainner.png" },
+            { id: "padel", nombre: "Padel", desc: "Estrategia y Entrenamiento", img: "versiones_nelida/padel.png" },
+            { id: "psicologa", nombre: "Psicóloga", desc: "Salud mental", img: "versiones_nelida/psicologa.png" },
+            { id: "sexologa", nombre: "Sexóloga", desc: "Educación sexual y Fantasias", img: "versiones_nelida/sexologa.png" },
+            { id: "tenis", nombre: "Tenis", desc: "Entrenamiento y Estrategias", img: "versiones_nelida/tenis.png" },
+            { id: "terapia_parejas", nombre: "Terapia de Parejas", desc: "Vínculos Amorosos", img: "versiones_nelida/terapia deparejas.PNG" }
+        ];
+
+        let indiceActual = 0;
+
+        window.cambiarFaceta = (dir) => {
+            indiceActual += dir;
+            if (indiceActual < 0) indiceActual = facetas.length - 1;
+            if (indiceActual >= facetas.length) indiceActual = 0;
+            actualizarUI();
+        };
+
+        function actualizarUI() {
+            const f = facetas[indiceActual];
+            const imgElement = document.getElementById('img-ruleta');
+            imgElement.src = f.img; // Sin trucos de cache para no romper la ruta
+            document.getElementById('nombre-faceta').innerText = f.nombre;
+            document.getElementById('desc-faceta').innerText = f.desc;
+        }
+
+        window.seleccionarYEntrar = async () => {
+            if (!usuarioActual) return;
+            const seleccionada = facetas[indiceActual].id;
+            try {
+                await updateDoc(doc(db, "usuarios", usuarioActual.uid), {
+                    version_seleccionada: seleccionada
+                });
+                // SALTO A TU ARCHIVO REAL
+                window.location.href = "interaccion.html"; 
+            } catch (e) { 
+                console.error("Error:", e);
+            }
+        };
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000; color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+        .ruleta-container { position: relative; width: 300px; height: 400px; display: flex; align-items: center; justify-content: center; }
+        .img-principal { width: 100%; height: 100%; object-fit: cover; border-radius: 30px; border: 2px solid #333; }
+        .flecha { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: none; color: white; font-size: 30px; padding: 20px; cursor: pointer; border-radius: 10px; z-index: 10; }
+        .flecha-izq { left: -70px; }
+        .flecha-der { right: -70px; }
+        .info-faceta { text-align: center; margin-top: 20px; height: 80px; }
+        .btn-confirmar { margin-top: 20px; background: #007bff; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1 style="margin-bottom:20px; font-weight: 300; letter-spacing: 2px;">NÉLIDA AI</h1>
+    <div class="ruleta-container">
+        <button class="flecha flecha-izq" onclick="cambiarFaceta(-1)">❮</button>
+        <img id="img-ruleta" src="versiones_nelida/ARTES MARCIALES MIXTAS.png" class="img-principal">
+        <button class="flecha flecha-der" onclick="cambiarFaceta(1)">❯</button>
+    </div>
+    <div class="info-faceta">
+        <h2 id="nombre-faceta">ARTES MARCIALES MIXTAS</h2>
+        <p id="desc-faceta" style="opacity:0.6;">Disciplina y fuerza</p>
+    </div>
+    <button class="btn-confirmar" onclick="seleccionarYEntrar()">CONFIRMAR</button>
+</body>
+</html>
