@@ -131,7 +131,7 @@
             historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
 
             try {
-                // MODIFICACIÓN PARA EVITAR ERROR DE CHANNEL CLOSED
+                // CAMBIO CLAVE: Usamos una ruta relativa directa para evitar conflictos de canal
                 const response = await fetch('/.netlify/functions/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -142,9 +142,10 @@
                     })
                 });
 
-                if (!response.ok) throw new Error('Error en servidor');
+                if (!response.ok) throw new Error('Servidor no responde');
 
                 const data = await response.json();
+                
                 const loader = document.getElementById(idCarga);
                 if (loader) loader.remove();
 
@@ -163,10 +164,10 @@
                     hablar(respuesta); 
                 }
             } catch (error) {
-                console.error("Error en el canal:", error);
+                console.error("Error en el fetch:", error);
                 const loader = document.getElementById(idCarga);
                 if (loader) loader.remove();
-                zona.innerHTML += `<div style="color: #ff4d4d;">Conexión interrumpida. Intenta de nuevo.</div>`;
+                zona.innerHTML += `<div style="color: #ff4d4d;">Conexión interrumpida. Por favor, intentá enviar de nuevo.</div>`;
             }
             zona.scrollTop = zona.scrollHeight;
         };
