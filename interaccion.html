@@ -132,7 +132,9 @@
             historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
 
             try {
-                // CAMBIO CLAVE: Usamos una ruta relativa directa para evitar conflictos de canal
+                // PARCHE: Le damos un respiro al navegador antes de la conexión para que no corte el canal
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 const response = await fetch('/.netlify/functions/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
