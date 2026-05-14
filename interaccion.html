@@ -1,56 +1,143 @@
-<script type="module">
-    // ... (mantén tus imports y config de Firebase igual)
-
-    window.enviar = async () => {
-        const input = document.getElementById('userInput');
-        const zona = document.getElementById('zona-mensajes');
-        const texto = input.value.trim();
-        if (!texto || !currentUser) return; // Ahora es vital que haya un usuario logueado
-
-        zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
-        input.value = "";
-        zona.scrollTop = zona.scrollHeight;
-
-        const idCarga = "carga-" + Date.now();
-        zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
-
-        historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
-
-        try {
-            const response = await fetch('/.netlify/functions/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    contents: historialAcumulado, 
-                    especialidad: facetaActiva,
-                    userId: currentUser.uid // <--- ESTO ES LO NUEVO: Mandamos el ID al peaje
-                })
-            });
-
-            const data = await response.json();
-            document.getElementById(idCarga).remove();
-
-            // LÓGICA DE MURO DE PAGO: Si el servidor dice que llegamos al límite
-            if (data.isPaywall) {
-                zona.innerHTML += `
-                    <div style="margin-bottom: 25px; border-left: 2px solid #ff4d4d; padding: 15px; background: rgba(255,77,77,0.1); border-radius: 10px;">
-                        <p><b>Nélida:</b> ${data.text}</p>
-                        <a href="${data.paymentUrl}" target="_blank" class="btn-pago-pro">ACTIVAR NELIDA PRO</a>
-                    </div>`;
-                hablar(data.text);
-            } 
-            else if (data.candidates && data.candidates[0].content) {
-                const respuesta = data.candidates[0].content.parts[0].text;
-                historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
-                zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuesta)}</div>`;
-                hablar(respuesta); 
-            }
-        } catch (error) {
-            if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
-            zona.innerHTML += `<div style="color: #ff4d4d;">Error de enlace.</div>`;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nélida AI - Interface Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --neon-green: #00ffcc;
+            --neon-purple: #8e44ad;
+            --glass-bg: rgba(0, 0, 0, 0.8);
+            --glass-border: rgba(0, 255, 204, 0.3);
         }
-        zona.scrollTop = zona.scrollHeight;
-    };
-    
-    // ... (el resto del código igual)
-</script>
+        body { margin: 0; background-color: #000; overflow: hidden; font-family: 'Orbitron', 'Segoe UI', sans-serif; color: #fff; }
+        #fondo-nelida { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; filter: brightness(0.4) blur(2px); }
+        .interfaz-usuario { position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; height: 100vh; padding: 0 3%; gap: 20px; }
+        .contenedor-estetico { height: 80%; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; }
+        .chat-zona { flex-grow: 1; overflow-y: auto; padding-right: 10px; scrollbar-width: thin; scrollbar-color: var(--neon-green) transparent; }
+        .input-contenedor { display: flex; gap: 10px; margin-top: 20px; }
+        input { flex-grow: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px; color: #fff; outline: none; }
+        button { background: var(--neon-green); color: #000; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #fff; box-shadow: 0 0 15px var(--neon-green); }
+        .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; margin-bottom: 10px; }
+        .btn-pago-pro { display: inline-block; margin-top: 10px; background: #ff4d4d; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <img src="" id="fondo-nelida" alt="Nélida">
+
+    <div class="interfaz-usuario">
+        <div class="contenedor-estetico" style="width: 65%;">
+            <div id="zona-mensajes" class="chat-zona"></div>
+            <div class="input-contenedor">
+                <input type="text" id="userInput" placeholder="Escribile a Nélida..." onkeypress="if(event.key==='Enter') enviar()">
+                <button onclick="enviar()">ENVIAR</button>
+            </div>
+            <button id="btn-stop-voice" style="display:none; margin-top:10px; background:#ff4d4d; color:#fff;" onclick="window.speechSynthesis.cancel()">Detener Voz</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
+            authDomain: "nelida-e89d3.firebaseapp.com",
+            projectId: "nelida-e89d3",
+            storageBucket: "nelida-e89d3.firebasestorage.app",
+            messagingSenderId: "135147571928",
+            appId: "1:135147571928:web:347838ce007dac458225ad"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        let currentUser = null;
+        let facetaActiva = localStorage.getItem('facetaSeleccionada') || 'Amiga';
+        let historialAcumulado = [];
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                console.log("Usuario detectado:", user.uid);
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        // Cargar imagen de fondo según faceta
+        const imgFondo = document.getElementById('fondo-nelida');
+        const mapaFondos = {
+            'Amiga': 'versiones_nelida/amiga.png',
+            'Sexologa': 'versiones_nelida/sexologa.png',
+            'Novia': 'versiones_nelida/novia.png'
+        };
+        imgFondo.src = mapaFondos[facetaActiva] || 'versiones_nelida/amiga.png';
+
+        window.enviar = async () => {
+            const input = document.getElementById('userInput');
+            const zona = document.getElementById('zona-mensajes');
+            const texto = input.value.trim();
+            if (!texto || !currentUser) return;
+
+            zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
+            input.value = "";
+            zona.scrollTop = zona.scrollHeight;
+
+            const idCarga = "carga-" + Date.now();
+            zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
+
+            historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
+
+            try {
+                // RUTA CORREGIDA PARA NETLIFY
+                const response = await fetch('/.netlify/functions/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        contents: historialAcumulado, 
+                        especialidad: facetaActiva,
+                        userId: currentUser.uid 
+                    })
+                });
+
+                const data = await response.json();
+                if (document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+
+                if (data.isPaywall) {
+                    zona.innerHTML += `
+                        <div style="margin-bottom: 25px; border-left: 2px solid #ff4d4d; padding: 15px; background: rgba(255,77,77,0.1); border-radius: 10px;">
+                            <p><b>Nélida:</b> ${data.text}</p>
+                            <a href="${data.paymentUrl}" target="_blank" class="btn-pago-pro">ACTIVAR NELIDA PRO</a>
+                        </div>`;
+                    hablar(data.text);
+                } 
+                else if (data.candidates && data.candidates[0].content) {
+                    const respuesta = data.candidates[0].content.parts[0].text;
+                    historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
+                    zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuesta)}</div>`;
+                    hablar(respuesta); 
+                }
+            } catch (error) {
+                if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+                zona.innerHTML += `<div style="color: #ff4d4d;">Error de enlace. Verificá tu conexión o configuración.</div>`;
+                console.error("Error en enviar:", error);
+            }
+            zona.scrollTop = zona.scrollHeight;
+        };
+
+        function hablar(texto) {
+            window.speechSynthesis.cancel();
+            const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
+            lectura.lang = 'es-AR';
+            document.getElementById('btn-stop-voice').style.display = 'block';
+            lectura.onend = () => document.getElementById('btn-stop-voice').style.display = 'none';
+            window.speechSynthesis.speak(lectura);
+        }
+    </script>
+</body>
+</html>
