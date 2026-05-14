@@ -101,11 +101,9 @@
                 if (docSnap.exists()) {
                     facetaActiva = docSnap.data().version_seleccionada || "ayuda";
                     document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
-                    
                     if (mapaFondos[facetaActiva]) {
                         document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
                     }
-
                     const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
                     document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
                 }
@@ -133,19 +131,22 @@
             historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
 
             try {
-                // RUTA AJUSTADA PARA NETLIFY
+                // MODIFICACIÓN PARA EVITAR ERROR DE CHANNEL CLOSED
                 const response = await fetch('/.netlify/functions/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         contents: historialAcumulado, 
                         especialidad: facetaActiva,
-                        userId: currentUser.uid // Agregado para el control de mensajes
+                        userId: currentUser.uid 
                     })
                 });
 
+                if (!response.ok) throw new Error('Error en servidor');
+
                 const data = await response.json();
-                if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+                const loader = document.getElementById(idCarga);
+                if (loader) loader.remove();
 
                 if (data.isPaywall) {
                     zona.innerHTML += `
@@ -162,9 +163,10 @@
                     hablar(respuesta); 
                 }
             } catch (error) {
-                if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
-                zona.innerHTML += `<div style="color: #ff4d4d;">Error de enlace.</div>`;
-                console.error("Error:", error);
+                console.error("Error en el canal:", error);
+                const loader = document.getElementById(idCarga);
+                if (loader) loader.remove();
+                zona.innerHTML += `<div style="color: #ff4d4d;">Conexión interrumpida. Intenta de nuevo.</div>`;
             }
             zona.scrollTop = zona.scrollHeight;
         };
