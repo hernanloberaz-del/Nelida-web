@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
-    const API_KEY = "AQ.Ab8RN6JFiE5zr4qvCOfF3Y2qpK7ZX239XPQVNNZEOtA0NxPzLw"; 
+    // Esto lee la llave que cargaste en el panel de Vercel
+    const API_KEY = process.env.GEMINI_API_KEY; 
 
     res.setHeader('Content-Type', 'application/json');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
@@ -33,12 +34,12 @@ export default async function handler(req, res) {
                 temperature: 0.7,
                 topP: 0.8,
                 topK: 40,
-                maxOutputTokens: 1024, // Limita para que no divague
+                maxOutputTokens: 1024,
             }
         };
 
-        // URL optimizada
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+        // Cambiado a gemini-1.5-flash (el 2.5 no existe)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bodyPayload)
@@ -48,6 +49,6 @@ export default async function handler(req, res) {
         return res.status(200).json(data);
 
     } catch (err) {
-        return res.status(500).json({ error: "Error: " + err.message });
+        return res.status(500).json({ error: "Error interno: " + err.message });
     }
 }
