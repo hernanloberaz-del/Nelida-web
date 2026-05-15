@@ -1,9 +1,13 @@
 export default async function handler(req, res) {
-    // Usamos la llave que ya comprobaste que funciona
-    const API_KEY = "AQ.Ab8RN6JFiE5zr4qvCOfF3Y2qpK7ZX239XPQVNNZEOtA0NxPzLw"; 
+    // Aquí el código busca la llave en Vercel, no está escrita acá.
+    const API_KEY = process.env.GEMINI_API_KEY; 
 
     res.setHeader('Content-Type', 'application/json');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
+
+    if (!API_KEY) {
+        return res.status(500).json({ error: "Falta la GEMINI_API_KEY en Vercel" });
+    }
 
     try {
         const { contents, especialidad } = req.body;
