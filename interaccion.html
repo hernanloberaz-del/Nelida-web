@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="data:,">
     <title>Nélida AI - Interface Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -102,15 +101,19 @@
                 if (docSnap.exists()) {
                     facetaActiva = docSnap.data().version_seleccionada || "ayuda";
                     document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
+                    
                     if (mapaFondos[facetaActiva]) {
                         document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
                     }
+
+                    // SALUDO DINÁMICO REPARADO
                     const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
                     document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
                 }
             } else { window.location.href = "login.html"; }
         });
 
+        // HACEMOS LAS FUNCIONES GLOBALES PARA QUE EL HTML LAS VEA
         window.detenerVoz = () => {
             window.speechSynthesis.cancel();
             document.getElementById('btn-stop-voice').style.display = 'none';
@@ -120,7 +123,7 @@
             const input = document.getElementById('userInput');
             const zona = document.getElementById('zona-mensajes');
             const texto = input.value.trim();
-            if (!texto || !currentUser) return;
+            if (!texto) return;
 
             zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
             input.value = "";
@@ -132,53 +135,24 @@
             historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
 
             try {
-                await new Promise(resolve => setTimeout(resolve, 100));
-
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        message: texto, 
-                        contents: historialAcumulado, 
-                        especialidad: facetaActiva,
-                        userId: currentUser.uid 
-                    })
+                    body: JSON.stringify({ contents: historialAcumulado, especialidad: facetaActiva })
                 });
 
-                if (!response.ok) throw new Error('Servidor no responde');
-
                 const data = await response.json();
-                
-                const loader = document.getElementById(idCarga);
-                if (loader) loader.remove();
+                document.getElementById(idCarga).remove();
 
-                if (data.isPaywall) {
-                    zona.innerHTML += `
-                        <div style="margin-bottom: 25px; border-left: 2px solid #ff4d4d; padding: 15px; background: rgba(255,77,77,0.1); border-radius: 10px;">
-                            <p><b>Nélida:</b> ${data.text}</p>
-                            <a href="${data.paymentUrl}" target="_blank" style="display:inline-block; margin-top:10px; background:#ff4d4d; color:white; text-decoration:none; padding:10px 20px; border-radius:8px; font-weight:bold;">ACTIVAR NELIDA PRO</a>
-                        </div>`;
-                    hablar(data.text);
-                }
-                else {
-                    let respuestaStr = "";
-                    if (data.respuesta) {
-                        respuestaStr = data.respuesta;
-                    } else if (data.candidates && data.candidates[0].content) {
-                        respuestaStr = data.candidates[0].content.parts[0].text;
-                    }
-
-                    if (respuestaStr) {
-                        historialAcumulado.push({ role: "model", parts: [{ text: respuestaStr }] });
-                        zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuestaStr)}</div>`;
-                        hablar(respuestaStr); 
-                    }
+                if (data.candidates && data.candidates[0].content) {
+                    const respuesta = data.candidates[0].content.parts[0].text;
+                    historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
+                    zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuesta)}</div>`;
+                    hablar(respuesta); 
                 }
             } catch (error) {
-                console.error("Error en el fetch:", error);
-                const loader = document.getElementById(idCarga);
-                if (loader) loader.remove();
-                zona.innerHTML += `<div style="color: #ff4d4d;">Conexión interrumpida. Por favor, intentá enviar de nuevo.</div>`;
+                if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+                zona.innerHTML += `<div style="color: #ff4d4d;">Error de enlace.</div>`;
             }
             zona.scrollTop = zona.scrollHeight;
         };
