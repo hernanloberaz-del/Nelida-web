@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-    // Esto lee la llave que cargaste en el panel de Vercel
+    // Usamos la variable de entorno que ya pusiste en Vercel
     const API_KEY = process.env.GEMINI_API_KEY; 
 
     res.setHeader('Content-Type', 'application/json');
@@ -38,8 +38,8 @@ export default async function handler(req, res) {
             }
         };
 
-        // Cambiado a gemini-1.5-flash (el 2.5 no existe)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+        // USAMOS EL MODELO 2.5 FLASH QUE VOS TENÍAS (O EL 3.1 FLASH-LITE SI QUERÉS PROBAR LO ÚLTIMO)
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bodyPayload)
@@ -49,6 +49,6 @@ export default async function handler(req, res) {
         return res.status(200).json(data);
 
     } catch (err) {
-        return res.status(500).json({ error: "Error interno: " + err.message });
+        return res.status(500).json({ error: "Error: " + err.message });
     }
 }
