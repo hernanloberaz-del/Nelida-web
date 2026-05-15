@@ -1,41 +1,171 @@
-window.enviar = async () => {
-    const input = document.getElementById('userInput');
-    const zona = document.getElementById('zona-mensajes');
-    const texto = input.value.trim();
-    if (!texto) return;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nélida AI - Interface Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --neon-green: #00ffcc;
+            --neon-purple: #8e44ad;
+            --glass-bg: rgba(0, 0, 0, 0.8);
+            --glass-border: rgba(0, 255, 204, 0.3);
+        }
+        body { margin: 0; background-color: #000; overflow: hidden; font-family: 'Orbitron', 'Segoe UI', sans-serif; color: #fff; }
+        #fondo-nelida { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; filter: brightness(0.4) blur(2px); }
+        .interfaz-usuario { position: relative; z-index: 10; display: flex; justify-content: space-between; align-items: center; height: 100vh; padding: 0 3%; gap: 20px; }
+        .contenedor-estetico { height: 80%; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 15px; box-shadow: 0 0 25px rgba(0, 255, 204, 0.1); display: flex; flex-direction: column; overflow: hidden; animation: breathe 5s infinite ease-in-out; }
+        @keyframes breathe { 0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 204, 0.1); } 50% { box-shadow: 0 0 30px rgba(0, 255, 204, 0.25); border-color: var(--neon-green); } }
+        #caja-chat { width: 45%; }
+        .status-bar { padding: 10px 20px; background: rgba(0, 255, 204, 0.1); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; letter-spacing: 2px; text-transform: uppercase; }
+        #zona-mensajes { flex: 1; overflow-y: auto; padding: 25px; color: #e0e0e0; font-size: 1.05em; line-height: 1.7; scrollbar-width: thin; scrollbar-color: var(--neon-green) transparent; }
+        .input-box { display: flex; padding: 20px; gap: 12px; background: rgba(0, 0, 0, 0.5); border-top: 1px solid var(--glass-border); }
+        input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: #fff; padding: 14px; border-radius: 8px; outline: none; }
+        .btn-action { background: var(--neon-purple); color: white; border: none; padding: 0 25px; cursor: pointer; border-radius: 8px; font-weight: bold; }
+        #btn-stop-voice { display: none; background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 5px 10px; border-radius: 5px; font-size: 0.7em; cursor: pointer; }
+        #caja-video { width: 50%; position: relative; }
+        video { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; }
+        .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+    </style>
+</head>
+<body>
+    <img id="fondo-nelida" src="versiones_nelida/ayuda.png">
+    
+    <div class="interfaz-usuario">
+        <div id="caja-chat" class="contenedor-estetico">
+            <div class="status-bar">
+                <div><span id="label-especialidad">SISTEMA NÉLIDA</span></div>
+                <button id="btn-stop-voice" onclick="detenerVoz()">DETENER VOZ</button>
+            </div>
+            <div id="zona-mensajes">
+                <p id="msg-inicial"><b>Nélida:</b> Sincronizando faceta...</p>
+            </div>
+            <div class="input-box">
+                <input type="text" id="userInput" placeholder="Escribe aquí..." onkeypress="if(event.key==='Enter') enviar()">
+                <button class="btn-action" onclick="enviar()">ENVIAR</button>
+            </div>
+        </div>
 
-    zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
-    input.value = "";
-    zona.scrollTop = zona.scrollHeight;
+        <div id="caja-video" class="contenedor-estetico">
+            <video id="nelida-video" autoplay loop muted playsinline>
+                <source src="nelida_video.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
 
-    const idCarga = "carga-" + Date.now();
-    zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Nélida está pensando...</div>`;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-    historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
+            authDomain: "nelida-e89d3.firebaseapp.com",
+            projectId: "nelida-e89d3",
+            storageBucket: "nelida-e89d3.firebasestorage.app",
+            messagingSenderId: "135147571928",
+            appId: "1:135147571928:web:347838ce007dac458225ad"
+        };
 
-    try {
-        const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: historialAcumulado, especialidad: facetaActiva })
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let facetaActiva = "ayuda";
+        let historialAcumulado = [];
+
+        const mapaFondos = {
+            "artes_marciales": "ARTES MARCIALES MIXTAS.png",
+            "ayuda": "ayuda.png",
+            "contratista": "contratista.PNG", 
+            "Economia": "Economia.PNG",
+            "infantes": "infantes.png",
+            "maestra": "maestra.png",
+            "mecanica": "mecanica.PNG",
+            "medica": "medica.png",
+            "trainer": "nelida trainner.png",
+            "padel": "padel.png",
+            "psicologa": "psicologa.png",
+            "sexologa": "sexologa.png",
+            "tenis": "tenis.png",
+            "terapia_parejas": "terapia deparejas.PNG"
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const docSnap = await getDoc(doc(db, "usuarios", user.uid));
+                if (docSnap.exists()) {
+                    facetaActiva = docSnap.data().version_seleccionada || "ayuda";
+                    document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
+                    
+                    if (mapaFondos[facetaActiva]) {
+                        document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
+                    }
+
+                    const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
+                    document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
+                }
+            } else { window.location.href = "login.html"; }
         });
 
-        const data = await response.json();
-        
-        if (document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+        window.detenerVoz = () => {
+            window.speechSynthesis.cancel();
+            document.getElementById('btn-stop-voice').style.display = 'none';
+        };
 
-        if (response.ok && data.candidates && data.candidates[0].content) {
-            const respuesta = data.candidates[0].content.parts[0].text;
-            historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
-            zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuesta)}</div>`;
-            hablar(respuesta); 
-        } else {
-            const errorMsg = data.error || "Error de respuesta de Google";
-            zona.innerHTML += `<div style="color: #ff4d4d;">Error: ${errorMsg}</div>`;
+        window.enviar = async () => {
+            const input = document.getElementById('userInput');
+            const zona = document.getElementById('zona-mensajes');
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
+            input.value = "";
+            zona.scrollTop = zona.scrollHeight;
+
+            const idCarga = "carga-" + Date.now();
+            zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
+
+            historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: historialAcumulado, especialidad: facetaActiva })
+                });
+
+                const data = await response.json();
+                if (document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+
+                if (response.ok && data.candidates && data.candidates[0].content) {
+                    const respuesta = data.candidates[0].content.parts[0].text;
+                    historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
+                    zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuesta)}</div>`;
+                    hablar(respuesta); 
+                } else {
+                    const errorMsg = data.error?.message || data.error || "Error de respuesta";
+                    zona.innerHTML += `<div style="color: #ff4d4d; margin-bottom: 10px;">Error: ${errorMsg}</div>`;
+                }
+            } catch (error) {
+                if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+                zona.innerHTML += `<div style="color: #ff4d4d; margin-bottom: 10px;">Error de conexión.</div>`;
+            }
+            zona.scrollTop = zona.scrollHeight;
+        };
+
+        function hablar(texto) {
+            window.speechSynthesis.cancel();
+            const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
+            lectura.lang = 'es-AR';
+            document.getElementById('btn-stop-voice').style.display = 'block';
+            lectura.onend = () => document.getElementById('btn-stop-voice').style.display = 'none';
+            window.speechSynthesis.speak(lectura);
         }
-    } catch (error) {
-        if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
-        zona.innerHTML += `<div style="color: #ff4d4d;">Error de conexión con el servidor.</div>`;
-    }
-    zona.scrollTop = zona.scrollHeight;
-};
+    </script>
+</body>
+</html>
