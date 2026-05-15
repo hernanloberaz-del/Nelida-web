@@ -1,44 +1,53 @@
-import admin from 'firebase-admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: "nelida-e89d3",
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    })
-  });
-}
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    const API_KEY = "AQ.Ab8RN6JFiE5zr4qvCOfF3Y2qpK7ZX239XPQVNNZEOtA0NxPzLw"; 
 
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+    res.setHeader('Content-Type', 'application/json');
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
-  try {
-    const { message, contents, especialidad } = req.body;
+    try {
+        const { contents, especialidad } = req.body;
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
-      systemInstruction: `Sos Nélida, una asistente virtual clara y directa. Tu especialidad es ${especialidad || 'asistente general'}.`
-    });
+        const roles = {
+            "trainer": "NELIDA PERSONAL TRAINER. Rutinas, músculos y dieta.",
+            "maestra": "NELIDA MAESTRA. Tareas, matemática, física y química.",
+            "infantes": "NELIDA MAESTRA INFANTIL. Cuentos y canciones infantiles.",
+            "psicologa": "NELIDA PSICOLOGA. Empatía, moralejas y soluciones psicológicas.",
+            "artes_marciales": "NELIDA MMA. Estrategia de combate y defensa.",
+            "padel": "NELIDA COACH PADEL. Técnica Agustín Tapia, táctica y paletas.",
+            "tenis": "NELIDA COACH TENIS. Técnica y táctica de campo.",
+            "medica": "NELIDA DOCTORA. Medicina preventiva y RCP.",
+            "sexologa": "NELIDA SEXOLOGA. Educación sexual +18.",
+            "ayuda": "NELIDA CRUZ ROJA. Supervivencia y catástrofes.",
+            "contratista": "NELIDA CONTRATISTA. Mantenimiento industrial, techos y Ternium San Nicolás.",
+            "Economia": "NELIDA ECONOMISTA. ARCA, impuestos y finanzas argentinas."
+        };
 
-    // Usamos el historial acumulado para que tenga memoria
-    const result = await model.generateContent({
-        contents: contents
-    });
+        const instruccionEspecializada = roles[especialidad] || "NELIDA. Asistente profesional.";
 
-    const respuestaFinal = result.response.text();
-    return res.status(200).json({ respuesta: respuestaFinal });
+        const bodyPayload = {
+            system_instruction: {
+                parts: [{ text: `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}. Sé directa, técnica y evitá introducciones largas.` }]
+            },
+            contents: contents,
+            generationConfig: {
+                temperature: 0.7,
+                topP: 0.8,
+                topK: 40,
+                maxOutputTokens: 1024, // Limita para que no divague
+            }
+        };
 
-  } catch (error) {
-    console.error("Error en el servidor:", error);
-    return res.status(500).json({ error: error.message });
-  }
+        // URL optimizada
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyPayload)
+        });
+
+        const data = await response.json();
+        return res.status(200).json(data);
+
+    } catch (err) {
+        return res.status(500).json({ error: "Error: " + err.message });
+    }
 }
