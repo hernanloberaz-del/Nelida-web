@@ -27,4 +27,170 @@
         #btn-stop-voice { display: none; background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 5px 10px; border-radius: 5px; font-size: 0.7em; cursor: pointer; }
         #caja-video { width: 50%; position: relative; }
         video { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; }
-        .escribiendo { color: var(--neon
+        .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+    </style>
+</head>
+<body>
+    <img id="fondo-nelida" src="versiones_nelida/ayuda.png">
+    
+    <div class="interfaz-usuario">
+        <div id="caja-chat" class="contenedor-estetico">
+            <div class="status-bar">
+                <div><span id="label-especialidad">SISTEMA NÉLIDA</span></div>
+                <button id="btn-stop-voice" onclick="detenerVoz()">DETENER VOZ</button>
+            </div>
+            <div id="zona-mensajes">
+                <p id="msg-inicial"><b>Nélida:</b> Sincronizando faceta...</p>
+            </div>
+            <div class="input-box">
+                <input type="text" id="userInput" placeholder="Escribe aquí..." onkeypress="if(event.key==='Enter') enviar()">
+                <button class="btn-action" onclick="enviar()">ENVIAR</button>
+            </div>
+        </div>
+
+        <div id="caja-video" class="contenedor-estetico">
+            <video id="nelida-video" autoplay loop muted playsinline>
+                <source src="nelida_video.mp4" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
+            authDomain: "nelida-e89d3.firebaseapp.com",
+            projectId: "nelida-e89d3",
+            storageBucket: "nelida-e89d3.firebasestorage.app",
+            messagingSenderId: "135147571928",
+            appId: "1:135147571928:web:347838ce007dac458225ad"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let facetaActiva = "ayuda";
+        let historialAcumulado = [];
+
+        const mapaFondos = {
+            "artes_marciales": "ARTES MARCIALES MIXTAS.png",
+            "ayuda": "ayuda.png",
+            "contratista": "contratista.PNG", 
+            "Economia": "Economia.PNG",
+            "infantes": "infantes.png",
+            "maestra": "maestra.png",
+            "mecanica": "mecanica.PNG",
+            "medica": "medica.png",
+            "trainer": "nelida trainner.png",
+            "padel": "padel.png",
+            "psicologa": "psicologa.png",
+            "sexologa": "sexologa.png",
+            "tenis": "tenis.png",
+            "terapia_parejas": "terapia deparejas.PNG"
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                const docSnap = await getDoc(doc(db, "usuarios", user.uid));
+                if (docSnap.exists()) {
+                    facetaActiva = docSnap.data().version_seleccionada || "ayuda";
+                    document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
+                    if (mapaFondos[facetaActiva]) {
+                        document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
+                    }
+                    const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
+                    document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
+                }
+            } else { window.location.href = "login.html"; }
+        });
+
+        window.detenerVoz = () => {
+            window.speechSynthesis.cancel();
+            document.getElementById('btn-stop-voice').style.display = 'none';
+        };
+
+        window.enviar = async () => {
+            const input = document.getElementById('userInput');
+            const zona = document.getElementById('zona-mensajes');
+            const texto = input.value.trim();
+            if (!texto || !currentUser) return;
+
+            zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
+            input.value = "";
+            zona.scrollTop = zona.scrollHeight;
+
+            const idCarga = "carga-" + Date.now();
+            zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
+
+            historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        message: texto, 
+                        contents: historialAcumulado, 
+                        especialidad: facetaActiva,
+                        userId: currentUser.uid 
+                    })
+                });
+
+                if (!response.ok) throw new Error('Servidor no responde');
+
+                const data = await response.json();
+                
+                const loader = document.getElementById(idCarga);
+                if (loader) loader.remove();
+
+                if (data.isPaywall) {
+                    zona.innerHTML += `
+                        <div style="margin-bottom: 25px; border-left: 2px solid #ff4d4d; padding: 15px; background: rgba(255,77,77,0.1); border-radius: 10px;">
+                            <p><b>Nélida:</b> ${data.text}</p>
+                            <a href="${data.paymentUrl}" target="_blank" style="display:inline-block; margin-top:10px; background:#ff4d4d; color:white; text-decoration:none; padding:10px 20px; border-radius:8px; font-weight:bold;">ACTIVAR NELIDA PRO</a>
+                        </div>`;
+                    hablar(data.text);
+                }
+                else {
+                    let respuestaStr = "";
+                    if (data.respuesta) {
+                        respuestaStr = data.respuesta;
+                    } else if (data.candidates && data.candidates[0].content) {
+                        respuestaStr = data.candidates[0].content.parts[0].text;
+                    }
+
+                    if (respuestaStr) {
+                        historialAcumulado.push({ role: "model", parts: [{ text: respuestaStr }] });
+                        zona.innerHTML += `<div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">${marked.parse(respuestaStr)}</div>`;
+                        hablar(respuestaStr); 
+                    }
+                }
+            } catch (error) {
+                console.error("Error en el fetch:", error);
+                const loader = document.getElementById(idCarga);
+                if (loader) loader.remove();
+                zona.innerHTML += `<div style="color: #ff4d4d;">Conexión interrumpida. Por favor, intentá enviar de nuevo.</div>`;
+            }
+            zona.scrollTop = zona.scrollHeight;
+        };
+
+        function hablar(texto) {
+            window.speechSynthesis.cancel();
+            const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
+            lectura.lang = 'es-AR';
+            document.getElementById('btn-stop-voice').style.display = 'block';
+            lectura.onend = () => document.getElementById('btn-stop-voice').style.display = 'none';
+            window.speechSynthesis.speak(lectura);
+        }
+    </script>
+</body>
+</html>
