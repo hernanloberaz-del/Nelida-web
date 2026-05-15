@@ -1,4 +1,3 @@
-
 export default async function handler(req, res) {
     // Lee la llave desde las variables de Vercel
     const API_KEY = process.env.GEMINI_API_KEY; 
