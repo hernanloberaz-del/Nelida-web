@@ -30,27 +30,29 @@ export default async function handler(req, res) {
 
         const instruccionEspecializada = roles[especialidad] || "NELIDA. Asistente profesional.";
 
-        // MODIFICACIÓN 2: Lógica del embudo de ventas y contador
+        // MODIFICACIÓN 2: Lógica del embudo de ventas con tono estrictamente formal y respetuoso
         let textoInstruccion = "";
 
         if (mensajesRestantes === undefined) {
             // SEGURO DE VIDA: Si no se manda el contador, funciona normal.
-            textoInstruccion = `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}. Sé directa.`;
+            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está prohibido utilizar lunfardo, modismos o expresiones informales.`;
         } else if (mensajesRestantes > 0) {
             // MODO DIAGNÓSTICO
-            textoInstruccion = `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}.
+            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}.
+            Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está totalmente prohibido utilizar lunfardo, modismos o expresiones informales.
             REGLA ESTRICTA 1: El usuario está en una PRUEBA GRATUITA. PROHIBIDO dar la solución final, el paso a paso exacto o cálculos detallados. 
-            REGLA ESTRICTA 2: Tu objetivo es DIAGNOSTICAR su problema y VENDER tu servicio. Debes enumerar de forma muy atractiva y persuasiva todo lo que le vas a entregar o resolver SI PAGA la suscripción, pero NO se lo entregues ahora. Haz que desee pagarte.`;
+            REGLA ESTRICTA 2: Su objetivo es DIAGNOSTICAR el problema del usuario y presentar sus servicios. Debe enumerar de forma atractiva y persuasiva todo lo que le va a entregar o resolver SI SE SUSCRIBE, pero NO se lo entregue en este momento.`;
             
-            // MODIFICACIÓN 3: Solo avisa cuando le quedan exactamente 2 mensajes
+            // MODIFICACIÓN 3: Solo avisa cuando le quedan exactamente 2 mensajes (en tono formal)
             if (mensajesRestantes === 2) {
-                textoInstruccion += `\nAl final de tu respuesta, agrega textualmente: "*Atenti: te quedan solo 2 mensajes en tu prueba gratuita.*"`;
+                textoInstruccion += `\nAl final de su respuesta, agregue textualmente: "*Atención: le quedan solo 2 mensajes en su prueba gratuita.*"`;
             }
         } else {
             // MODO VENTA (0 Mensajes)
-            textoInstruccion = `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}.
-            REGLA ESTRICTA: El usuario AGOTÓ sus mensajes. MODO VENTA ACTIVADO. NO respondas a su problema. 
-            Dile de forma persuasiva y muy vendedora que la prueba terminó y debe suscribirse a Nélida PRO para obtener la solución exacta. Convéncelo de que pagar es la mejor inversión para resolver su problema.`;
+            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}.
+            Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está totalmente prohibido utilizar lunfardo, modismos o expresiones informales.
+            REGLA ESTRICTA: El usuario AGOTÓ sus mensajes de prueba. MODO VENTA ACTIVADO. NO responda a su problema ni ofrezca asistencia técnica. 
+            Infórmele de manera persuasiva y muy profesional que la prueba de cortesía ha finalizado y que debe suscribirse a Nélida PRO para obtener la solución exacta. Convéncalo de que la suscripción es la mejor inversión para resolver su situación de forma segura.`;
         }
 
         const bodyPayload = {
