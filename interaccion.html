@@ -78,8 +78,10 @@
         let facetaActiva = "ayuda";
         let historialAcumulado = [];
         
-        // CONTADOR DE MENSAJES PARA EL EMBUDO DE VENTAS
         let mensajesRestantes = 3; 
+
+        // Variable global para rastrear qué botón de audio está activo
+        window.botonAudioActivo = null;
 
         const mapaFondos = {
             "artes_marciales": "ARTES MARCIALES MIXTAS.png",
@@ -131,7 +133,6 @@
 
             historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
 
-            // RESTAMOS AL CONTADOR SI QUEDAN MENSAJES
             if (mensajesRestantes > 0) {
                 mensajesRestantes--;
             }
@@ -140,7 +141,6 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // ENVIAMOS EL CONTADOR AL BACKEND
                     body: JSON.stringify({ contents: historialAcumulado, especialidad: facetaActiva, mensajesRestantes: mensajesRestantes })
                 });
 
@@ -151,19 +151,17 @@
                     const respuesta = data.candidates[0].content.parts[0].text;
                     historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
                     
-                    // PREPARAMOS EL TEXTO PARA QUE EL BOTÓN DE AUDIO NO SE ROMPA
                     const safeRespuesta = respuesta.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-                    // IMPRIMIMOS LA RESPUESTA CON EL BOTÓN DE ESCUCHAR MANUAL
+                    // ACÁ SE LE PASA "this" (el botón mismo) A LA FUNCIÓN HABLAR
                     zona.innerHTML += `
                         <div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">
                             ${marked.parse(respuesta)}
-                            <button onclick="window.hablar(this.getAttribute('data-texto'))" data-texto="${safeRespuesta}" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; margin-top: 10px; font-family: 'Orbitron', sans-serif;" title="Escuchar respuesta">
+                            <button onclick="window.hablar(this, this.getAttribute('data-texto'))" data-texto="${safeRespuesta}" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; margin-top: 10px; font-family: 'Orbitron', sans-serif; transition: 0.3s;" title="Control de audio">
                                 🔊 Escuchar
                             </button>
                         </div>`;
                     
-                    // SI EL CONTADOR LLEGA A CERO, MOSTRAMOS EL BOTÓN DE PAGO
                     if (mensajesRestantes === 0) {
                         zona.innerHTML += `
                         <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
@@ -184,13 +182,58 @@
             zona.scrollTop = zona.scrollHeight;
         };
 
-        // FUNCIÓN DE AUDIO GLOBAL PARA QUE FUNCIONE AL HACER CLIC
-        window.hablar = (texto) => {
-            window.speechSynthesis.cancel();
+        // NUEVA FUNCIÓN DE AUDIO CON PAUSA Y CONTINUAR
+        window.hablar = (btnElement, texto) => {
+            const synth = window.speechSynthesis;
+
+            // 1. Si tocamos el MISMO botón que ya está hablando o en pausa
+            if (window.botonAudioActivo === btnElement) {
+                if (synth.speaking && !synth.paused) {
+                    synth.pause();
+                    btnElement.innerHTML = '▶️ Continuar';
+                    btnElement.style.background = 'rgba(255, 204, 0, 0.2)'; // Se pone amarillito
+                    btnElement.style.borderColor = '#ffcc00';
+                } else if (synth.paused) {
+                    synth.resume();
+                    btnElement.innerHTML = '⏸️ Pausar';
+                    btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; // Se pone violeta
+                    btnElement.style.borderColor = 'var(--neon-purple)';
+                } else {
+                    // Si ya había terminado, arranca de cero
+                    iniciarLectura(btnElement, texto, synth);
+                }
+            } else {
+                // 2. Si tocamos un botón NUEVO o es la primera vez
+                if (window.botonAudioActivo) {
+                    // Resetea visualmente el botón anterior
+                    window.botonAudioActivo.innerHTML = '🔊 Escuchar';
+                    window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)';
+                    window.botonAudioActivo.style.borderColor = 'var(--neon-green)';
+                }
+                synth.cancel(); // Frena cualquier otro audio
+                iniciarLectura(btnElement, texto, synth);
+            }
+        };
+
+        function iniciarLectura(btn, texto, synth) {
+            window.botonAudioActivo = btn;
+            btn.innerHTML = '⏸️ Pausar';
+            btn.style.background = 'rgba(142, 68, 173, 0.3)';
+            btn.style.borderColor = 'var(--neon-purple)';
+            
             const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
             lectura.lang = 'es-AR';
-            window.speechSynthesis.speak(lectura);
-        };
+            
+            // Cuando termina de hablar sola, vuelve a la normalidad
+            lectura.onend = () => {
+                btn.innerHTML = '🔊 Escuchar';
+                btn.style.background = 'rgba(0, 255, 204, 0.15)';
+                btn.style.borderColor = 'var(--neon-green)';
+                window.botonAudioActivo = null;
+            };
+            
+            synth.speak(lectura);
+        }
     </script>
 </body>
 </html>
