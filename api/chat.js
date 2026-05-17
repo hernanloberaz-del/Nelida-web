@@ -10,7 +10,8 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { contents, especialidad } = req.body;
+        // MODIFICACIÓN 1: Agregamos "mensajesRestantes" a la recepción de datos
+        const { contents, especialidad, mensajesRestantes } = req.body;
 
         const roles = {
             "trainer": "NELIDA PERSONAL TRAINER. Rutinas, músculos y dieta.",
@@ -29,9 +30,32 @@ export default async function handler(req, res) {
 
         const instruccionEspecializada = roles[especialidad] || "NELIDA. Asistente profesional.";
 
+        // MODIFICACIÓN 2: Lógica del embudo de ventas y contador
+        let textoInstruccion = "";
+
+        if (mensajesRestantes === undefined) {
+            // SEGURO DE VIDA: Si no se manda el contador, funciona normal.
+            textoInstruccion = `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}. Sé directa.`;
+        } else if (mensajesRestantes > 0) {
+            // MODO DIAGNÓSTICO
+            textoInstruccion = `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}.
+            REGLA ESTRICTA 1: El usuario está en una PRUEBA GRATUITA. PROHIBIDO dar la solución final, el paso a paso exacto o cálculos detallados. 
+            REGLA ESTRICTA 2: Tu objetivo es DIAGNOSTICAR su problema y VENDER tu servicio. Debes enumerar de forma muy atractiva y persuasiva todo lo que le vas a entregar o resolver SI PAGA la suscripción, pero NO se lo entregues ahora. Haz que desee pagarte.`;
+            
+            // MODIFICACIÓN 3: Solo avisa cuando le quedan exactamente 2 mensajes
+            if (mensajesRestantes === 2) {
+                textoInstruccion += `\nAl final de tu respuesta, agrega textualmente: "*Atenti: te quedan solo 2 mensajes en tu prueba gratuita.*"`;
+            }
+        } else {
+            // MODO VENTA (0 Mensajes)
+            textoInstruccion = `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}.
+            REGLA ESTRICTA: El usuario AGOTÓ sus mensajes. MODO VENTA ACTIVADO. NO respondas a su problema. 
+            Dile de forma persuasiva y muy vendedora que la prueba terminó y debe suscribirse a Nélida PRO para obtener la solución exacta. Convéncelo de que pagar es la mejor inversión para resolver su problema.`;
+        }
+
         const bodyPayload = {
             system_instruction: {
-                parts: [{ text: `Nombre: NELIDA. Acento: Argentino. Rol: ${instruccionEspecializada}. Sé directa.` }]
+                parts: [{ text: textoInstruccion }]
             },
             contents: contents,
             generationConfig: {
