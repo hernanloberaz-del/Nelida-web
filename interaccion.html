@@ -20,9 +20,17 @@
         #caja-chat { width: 45%; }
         .status-bar { padding: 10px 20px; background: rgba(0, 255, 204, 0.1); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; letter-spacing: 2px; text-transform: uppercase; }
         #zona-mensajes { flex: 1; overflow-y: auto; padding: 25px; color: #e0e0e0; font-size: 1.05em; line-height: 1.7; scrollbar-width: thin; scrollbar-color: var(--neon-green) transparent; }
-        .input-box { display: flex; padding: 20px; gap: 12px; background: rgba(0, 0, 0, 0.5); border-top: 1px solid var(--glass-border); align-items: center; }
-        input[type="text"] { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: #fff; padding: 14px; border-radius: 8px; outline: none; }
-        .btn-action { background: var(--neon-purple); color: white; border: none; padding: 0 25px; cursor: pointer; border-radius: 8px; font-weight: bold; height: 100%; min-height: 46px; }
+        
+        /* Modificado para contener el indicador de archivo */
+        .input-box { display: flex; padding: 20px; gap: 12px; background: rgba(0, 0, 0, 0.5); border-top: 1px solid var(--glass-border); align-items: flex-end; }
+        .input-wrapper { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        
+        /* Estilos del indicador del archivo adjunto */
+        #file-indicator { display: none; align-items: center; gap: 10px; background: rgba(0, 255, 204, 0.1); border: 1px solid var(--neon-green); padding: 6px 12px; border-radius: 5px; font-size: 0.85em; color: var(--neon-green); width: fit-content; font-family: 'Segoe UI', sans-serif; }
+        #file-indicator button { background: none; border: none; color: #ff4d4d; cursor: pointer; font-weight: bold; font-size: 1.1em; padding: 0 5px; }
+        
+        input[type="text"] { width: 100%; box-sizing: border-box; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); color: #fff; padding: 14px; border-radius: 8px; outline: none; }
+        .btn-action { background: var(--neon-purple); color: white; border: none; padding: 0 25px; cursor: pointer; border-radius: 8px; font-weight: bold; height: 46px; }
         #caja-video { width: 50%; position: relative; }
         video { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; }
         .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; animation: pulse 1.5s infinite; }
@@ -41,10 +49,17 @@
                 <p id="msg-inicial"><b>Nélida:</b> Sincronizando faceta...</p>
             </div>
             <div class="input-box">
-                <input type="file" id="archivoAdjunto" style="display: none;" accept=".pdf, .xls, .xlsx, .doc, .docx, .txt">
-                <button type="button" onclick="document.getElementById('archivoAdjunto').click()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 5px;" title="Adjuntar documento">📎</button>
+                <input type="file" id="archivoAdjunto" style="display: none;" accept=".pdf, .xls, .xlsx, .doc, .docx, .txt, image/*">
+                <button type="button" onclick="document.getElementById('archivoAdjunto').click()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0 5px; height: 46px;" title="Adjuntar documento">📎</button>
                 
-                <input type="text" id="userInput" placeholder="Escribe aquí..." onkeypress="if(event.key==='Enter') enviar()">
+                <div class="input-wrapper">
+                    <div id="file-indicator">
+                        <span id="file-name">📎 Archivo.pdf</span>
+                        <button onclick="window.quitarArchivo()" title="Quitar archivo">✖</button>
+                    </div>
+                    <input type="text" id="userInput" placeholder="Escribe aquí..." onkeypress="if(event.key==='Enter') enviar()">
+                </div>
+                
                 <button class="btn-action" onclick="enviar()">ENVIAR</button>
             </div>
         </div>
@@ -79,9 +94,12 @@
         let historialAcumulado = [];
         
         let mensajesRestantes = 3; 
-
-        // Variable global para rastrear qué botón de audio está activo
         window.botonAudioActivo = null;
+
+        // NUEVAS VARIABLES PARA EL ARCHIVO
+        let archivoDataBase64 = null;
+        let archivoMimeType = null;
+        let archivoNombre = null;
 
         const mapaFondos = {
             "artes_marciales": "ARTES MARCIALES MIXTAS.png",
@@ -118,20 +136,60 @@
             } else { window.location.href = "login.html"; }
         });
 
+        // NUEVA FUNCIÓN: LEER EL ARCHIVO Y PASARLO A BASE64
+        document.getElementById('archivoAdjunto').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // event.target.result devuelve algo como "data:application/pdf;base64,JVBERi0xLjQK..."
+                // Nosotros solo necesitamos lo que viene después de la coma.
+                archivoDataBase64 = event.target.result.split(',')[1];
+                archivoMimeType = file.type || 'application/octet-stream';
+                archivoNombre = file.name;
+
+                // Mostrar el cartelito
+                document.getElementById('file-name').innerText = `📎 ${archivoNombre}`;
+                document.getElementById('file-indicator').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // NUEVA FUNCIÓN: QUITAR EL ARCHIVO SI SE ARREPIENTE
+        window.quitarArchivo = () => {
+            archivoDataBase64 = null;
+            archivoMimeType = null;
+            archivoNombre = null;
+            document.getElementById('archivoAdjunto').value = ''; 
+            document.getElementById('file-indicator').style.display = 'none';
+        };
+
         window.enviar = async () => {
             const input = document.getElementById('userInput');
             const zona = document.getElementById('zona-mensajes');
             const texto = input.value.trim();
-            if (!texto) return;
+            
+            // Si no hay ni texto ni archivo, no hacemos nada
+            if (!texto && !archivoDataBase64) return;
 
-            zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${texto}</div>`;
+            // Mostrar el mensaje en pantalla (con el archivo si lo hay)
+            let mensajePantalla = texto;
+            if (archivoNombre) {
+                mensajePantalla += `<br><span style="color:var(--neon-green); font-size:0.85em;">📎 Archivo adjunto: ${archivoNombre}</span>`;
+            }
+            zona.innerHTML += `<div style="color: rgba(255,255,255,0.6); text-align: right; margin-bottom: 10px;">> ${mensajePantalla}</div>`;
+            
             input.value = "";
             zona.scrollTop = zona.scrollHeight;
 
             const idCarga = "carga-" + Date.now();
             zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
 
-            historialAcumulado.push({ role: "user", parts: [{ text: texto }] });
+            // Guardamos el texto en el historial
+            // Nota: En la versión actual no metemos el base64 entero en el historial visible para no trabar la memoria,
+            // solo se envía en el momento (lo manejaremos completo en chat.js).
+            historialAcumulado.push({ role: "user", parts: [{ text: texto || "Revisa el documento adjunto." }] });
 
             if (mensajesRestantes > 0) {
                 mensajesRestantes--;
@@ -141,8 +199,18 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: historialAcumulado, especialidad: facetaActiva, mensajesRestantes: mensajesRestantes })
+                    // AQUÍ ENVIAMOS EL TEXTO + LOS DATOS DEL ARCHIVO
+                    body: JSON.stringify({ 
+                        contents: historialAcumulado, 
+                        especialidad: facetaActiva, 
+                        mensajesRestantes: mensajesRestantes,
+                        archivoBase64: archivoDataBase64,
+                        archivoMime: archivoMimeType
+                    })
                 });
+
+                // LIMPIAMOS EL ARCHIVO DESPUÉS DE ENVIARLO
+                window.quitarArchivo();
 
                 const data = await response.json();
                 if (document.getElementById(idCarga)) document.getElementById(idCarga).remove();
@@ -153,7 +221,6 @@
                     
                     const safeRespuesta = respuesta.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-                    // ACÁ SE LE PASA "this" (el botón mismo) A LA FUNCIÓN HABLAR
                     zona.innerHTML += `
                         <div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">
                             ${marked.parse(respuesta)}
@@ -177,40 +244,36 @@
                 }
             } catch (error) {
                 if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+                window.quitarArchivo(); // Limpiar también si hay error
                 zona.innerHTML += `<div style="color: #ff4d4d; margin-bottom: 10px;">Error de conexión.</div>`;
             }
             zona.scrollTop = zona.scrollHeight;
         };
 
-        // NUEVA FUNCIÓN DE AUDIO CON PAUSA Y CONTINUAR
         window.hablar = (btnElement, texto) => {
             const synth = window.speechSynthesis;
 
-            // 1. Si tocamos el MISMO botón que ya está hablando o en pausa
             if (window.botonAudioActivo === btnElement) {
                 if (synth.speaking && !synth.paused) {
                     synth.pause();
                     btnElement.innerHTML = '▶️ Continuar';
-                    btnElement.style.background = 'rgba(255, 204, 0, 0.2)'; // Se pone amarillito
+                    btnElement.style.background = 'rgba(255, 204, 0, 0.2)'; 
                     btnElement.style.borderColor = '#ffcc00';
                 } else if (synth.paused) {
                     synth.resume();
                     btnElement.innerHTML = '⏸️ Pausar';
-                    btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; // Se pone violeta
+                    btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; 
                     btnElement.style.borderColor = 'var(--neon-purple)';
                 } else {
-                    // Si ya había terminado, arranca de cero
                     iniciarLectura(btnElement, texto, synth);
                 }
             } else {
-                // 2. Si tocamos un botón NUEVO o es la primera vez
                 if (window.botonAudioActivo) {
-                    // Resetea visualmente el botón anterior
                     window.botonAudioActivo.innerHTML = '🔊 Escuchar';
                     window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)';
                     window.botonAudioActivo.style.borderColor = 'var(--neon-green)';
                 }
-                synth.cancel(); // Frena cualquier otro audio
+                synth.cancel(); 
                 iniciarLectura(btnElement, texto, synth);
             }
         };
@@ -224,7 +287,6 @@
             const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
             lectura.lang = 'es-AR';
             
-            // Cuando termina de hablar sola, vuelve a la normalidad
             lectura.onend = () => {
                 btn.innerHTML = '🔊 Escuchar';
                 btn.style.background = 'rgba(0, 255, 204, 0.15)';
