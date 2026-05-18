@@ -37,7 +37,7 @@
             border-radius: 20px;
             box-shadow: 0 0 40px rgba(0, 255, 204, 0.1);
             overflow: hidden;
-            flex-wrap: wrap; /* Para pantallas más chicas */
+            flex-wrap: wrap;
         }
 
         /* PANEL IZQUIERDO - RESUMEN */
@@ -140,7 +140,6 @@
             box-shadow: 0 0 10px rgba(142, 68, 173, 0.3);
         }
 
-        /* COLORES ESPECÍFICOS PARA MÉTODOS */
         .btn-mp.active { border-color: #009ee3; background: rgba(0, 158, 227, 0.2); box-shadow: 0 0 10px rgba(0, 158, 227, 0.3); }
         .btn-gpay.active { border-color: #ffffff; background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
 
@@ -313,39 +312,6 @@
                 }, 1000);
                 
             }, 2500);
-        }
-    </script>
-
-        // Función que simula el procesamiento y redirige
-        function procesarPago(e) {
-            e.preventDefault();
-            
-            const btn = document.querySelector('.pay-btn');
-            
-            // 1. Cambiamos el botón para simular que está conectando con el banco
-            btn.innerHTML = '⏳ PROCESANDO...';
-            btn.style.background = '#f39c12'; // Naranja de espera
-            btn.style.color = '#fff';
-            btn.disabled = true; // Desactivamos el botón para que no haga doble clic
-
-            // 2. Simulamos una demora de 2.5 segundos de validación
-            setTimeout(() => {
-                btn.innerHTML = '✅ PAGO APROBADO';
-                btn.style.background = '#27ae60'; // Verde de éxito
-                
-                // 3. Después de 1 segundo más, lo mandamos de vuelta a Nélida
-                setTimeout(() => {
-                    // Le agregamos "?pago=ok" a la URL para que la otra página sepa que ya pagó
-                    window.location.href = 'interaccion.html?pago=ok';
-                }, 1000);
-                
-            }, 2500);
-        }
-    </script>
-
-        function procesarPago(e) {
-            e.preventDefault();
-            alert("¡Excelente! Diseño de métodos múltiples integrado. Próximo paso real: Conectar las APIs de MercadoPago, Stripe o Google Pay.");
         }
     </script>
 </body>
