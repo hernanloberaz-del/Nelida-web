@@ -117,8 +117,8 @@
             }, 800);
         }
 
-        // Si es pro le damos infinito, si no, le damos 3.
-        let mensajesRestantes = esUsuarioPro ? Infinity : 3; 
+        // Si es pro le damos un número altísimo, si no, le damos 3.
+        let mensajesRestantes = esUsuarioPro ? 999999 : 3; 
         // -------------------------------------------------------------
 
         window.botonAudioActivo = null;
@@ -198,9 +198,9 @@
             // Si no hay ni texto ni archivo, no hacemos nada
             if (!texto && !archivoDataBase64) return;
 
-            // --- PUERTA TRASERA SEGURA (SOLO PARA HERNÁN) ---
+            // --- PUERTA TRASERA SEGURA ---
             if (texto === "/Odin2026") {
-                mensajesRestantes = Infinity; // Actualizado a Infinity para alinear con el nuevo sistema
+                mensajesRestantes = 999999; // Actualizado a 999999 para que no falle en el backend
                 input.value = "";
                 zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: Créditos recargados.</div>`;
                 zona.scrollTop = zona.scrollHeight;
@@ -224,7 +224,7 @@
             historialAcumulado.push({ role: "user", parts: [{ text: texto || "Revisa el documento adjunto." }] });
 
             if (mensajesRestantes > 0) {
-                mensajesRestantes--; // Si es Infinity, restarle 1 sigue siendo Infinity. ¡Magia matemática!
+                mensajesRestantes--; // Con 999999 alcanza para siempre
             }
 
             try {
