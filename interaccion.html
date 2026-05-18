@@ -269,11 +269,11 @@
                     if (mensajesRestantes === 0) {
                         zona.innerHTML += `
                         <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
-                            <button style="background: #009ee3; color: white; border: none; padding: 15px 30px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(0, 158, 227, 0.4);" onclick="window.open('https://www.mercadopago.com.ar', '_blank')">
-                                💳 SUSCRIBIRSE A NÉLIDA PRO
+                            <button style="background: var(--neon-purple); color: white; border: 1px solid var(--neon-green); padding: 15px 30px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);" onclick="window.location.href = 'checkout.html'">
+                                💎 OBTENER ACCESO PRO ILIMITADO
                             </button>
                         </div>`;
-                    }
+                }
 
                 } else {
                     const errorMsg = data.error?.message || data.error || "Error de respuesta";
