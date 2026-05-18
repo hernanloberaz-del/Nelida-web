@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>Nélida AI - Interface Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
+    
     <link rel="stylesheet" href="style.css">
     <style>
         :root {
@@ -35,6 +40,10 @@
         video { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; }
         .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
+        /* Estilos para los nuevos botones de exportación */
+        .export-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s; }
+        .export-btn:hover { background: rgba(0, 255, 204, 0.15); border-color: var(--neon-green); color: var(--neon-green); }
     </style>
 </head>
 <body>
@@ -143,8 +152,6 @@
 
             const reader = new FileReader();
             reader.onload = function(event) {
-                // event.target.result devuelve algo como "data:application/pdf;base64,JVBERi0xLjQK..."
-                // Nosotros solo necesitamos lo que viene después de la coma.
                 archivoDataBase64 = event.target.result.split(',')[1];
                 archivoMimeType = file.type || 'application/octet-stream';
                 archivoNombre = file.name;
@@ -196,9 +203,6 @@
             const idCarga = "carga-" + Date.now();
             zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
 
-            // Guardamos el texto en el historial
-            // Nota: En la versión actual no metemos el base64 entero en el historial visible para no trabar la memoria,
-            // solo se envía en el momento (lo manejaremos completo en chat.js).
             historialAcumulado.push({ role: "user", parts: [{ text: texto || "Revisa el documento adjunto." }] });
 
             if (mensajesRestantes > 0) {
@@ -209,7 +213,6 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // AQUÍ ENVIAMOS EL TEXTO + LOS DATOS DEL ARCHIVO
                     body: JSON.stringify({ 
                         contents: historialAcumulado, 
                         especialidad: facetaActiva, 
@@ -230,13 +233,21 @@
                     historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
                     
                     const safeRespuesta = respuesta.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    const idMsgUnico = "msg-block-" + Date.now();
 
+                    // AGREGAMOS LOS BOTONES CORPORATIVOS DE EXPORTACIÓN
                     zona.innerHTML += `
                         <div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">
-                            ${marked.parse(respuesta)}
-                            <button onclick="window.hablar(this, this.getAttribute('data-texto'))" data-texto="${safeRespuesta}" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; margin-top: 10px; font-family: 'Orbitron', sans-serif; transition: 0.3s;" title="Control de audio">
-                                🔊 Escuchar
-                            </button>
+                            <div id="${idMsgUnico}">${marked.parse(respuesta)}</div>
+                            <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+                                <button onclick="window.hablar(this, this.getAttribute('data-texto'))" data-texto="${safeRespuesta}" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s;" title="Control de audio">
+                                    🔊 Escuchar
+                                </button>
+                                <button onclick="window.exportarPDF('${idMsgUnico}')" class="export-btn">📄 PDF</button>
+                                <button onclick="window.exportarExcel('${idMsgUnico}')" class="export-btn">📊 Excel</button>
+                                <button onclick="window.exportarWord('${idMsgUnico}')" class="export-btn">📝 Word</button>
+                                <button onclick="window.exportarPPT('${idMsgUnico}')" class="export-btn">📺 PPT</button>
+                            </div>
                         </div>`;
                     
                     if (mensajesRestantes === 0) {
@@ -258,6 +269,98 @@
                 zona.innerHTML += `<div style="color: #ff4d4d; margin-bottom: 10px;">Error de conexión.</div>`;
             }
             zona.scrollTop = zona.scrollHeight;
+        };
+
+        // --- SISTEMA MAESTRO DE GENERACIÓN DE ARCHIVOS ---
+
+        // 1. GENERADOR DE PDF CORPORATIVO
+        window.exportarPDF = (id) => {
+            const element = document.getElementById(id);
+            const clone = element.cloneNode(true);
+            
+            // Adaptamos el clon para que simule una hoja impresa tradicional y pulcra
+            clone.style.color = '#000000';
+            clone.style.backgroundColor = '#ffffff';
+            clone.style.padding = '30px';
+            clone.style.fontFamily = 'Arial, sans-serif';
+            
+            const opt = {
+                margin:       15,
+                filename:     'Reporte_NelidaAI.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(clone).save();
+        };
+
+        // 2. GENERADOR DE EXCEL INTELIGENTE (ATRAPA TABLAS EN MILISEGUNDOS)
+        window.exportarExcel = (id) => {
+            const element = document.getElementById(id);
+            const tablaHtml = element.querySelector('table');
+            let libroExcel;
+
+            if (tablaHtml) {
+                // Si Nélida respondió con una tabla estructurada, la procesa perfecto
+                libroExcel = XLSX.utils.table_to_book(tablaHtml);
+            } else {
+                // Si es texto, distribuye las líneas en filas de Excel
+                const lineas = [];
+                element.querySelectorAll('p, li, h1, h2, h3').forEach(el => {
+                    lineas.push([el.innerText]);
+                });
+                const hoja = XLSX.utils.aoa_to_sheet(lineas);
+                libroExcel = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(libroExcel, hoja, "Datos");
+            }
+            XLSX.writeFile(libroExcel, 'Planilla_NelidaAI.xlsx');
+        };
+
+        // 3. GENERADOR DE WORD IMPECABLE
+        window.exportarWord = (id) => {
+            const element = document.getElementById(id);
+            const htmlCompleto = `
+                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                <head><title>Documento Nélida AI</title><style>body { font-family: Arial, sans-serif; line-height: 1.6; color: #000; }</style></head>
+                <body>${element.innerHTML}</body>
+                </html>`;
+            
+            const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Documento_NelidaAI.doc';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        // 4. GENERADOR DE DIAPOSITIVAS DE POWERPOINT AUTOMÁTICO
+        window.exportarPPT = (id) => {
+            const element = document.getElementById(id);
+            let pptx = new pptxgen();
+            let slide = pptx.addSlide();
+            
+            let posicionY = 1.0;
+            element.querySelectorAll('h1, h2, h3, p, li').forEach(el => {
+                if (posicionY < 6.0) {
+                    let esTitulo = el.tagName.startsWith('H');
+                    slide.addText(el.innerText, { 
+                        x: 1.0, 
+                        y: posicionY, 
+                        w: 8.0, 
+                        h: esTitulo ? 0.5 : 0.8, 
+                        fontSize: esTitulo ? 24 : 14,
+                        bold: esTitulo,
+                        color: esTitulo ? '8E44AD' : '333333'
+                    });
+                    posicionY += esTitulo ? 0.6 : 0.9;
+                } else {
+                    slide = pptx.addSlide();
+                    posicionY = 1.0;
+                }
+            });
+            pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' });
         };
 
         window.hablar = (btnElement, texto) => {
