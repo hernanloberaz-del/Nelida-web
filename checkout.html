@@ -316,6 +316,33 @@
         }
     </script>
 
+        // Función que simula el procesamiento y redirige
+        function procesarPago(e) {
+            e.preventDefault();
+            
+            const btn = document.querySelector('.pay-btn');
+            
+            // 1. Cambiamos el botón para simular que está conectando con el banco
+            btn.innerHTML = '⏳ PROCESANDO...';
+            btn.style.background = '#f39c12'; // Naranja de espera
+            btn.style.color = '#fff';
+            btn.disabled = true; // Desactivamos el botón para que no haga doble clic
+
+            // 2. Simulamos una demora de 2.5 segundos de validación
+            setTimeout(() => {
+                btn.innerHTML = '✅ PAGO APROBADO';
+                btn.style.background = '#27ae60'; // Verde de éxito
+                
+                // 3. Después de 1 segundo más, lo mandamos de vuelta a Nélida
+                setTimeout(() => {
+                    // Le agregamos "?pago=ok" a la URL para que la otra página sepa que ya pagó
+                    window.location.href = 'interaccion.html?pago=ok';
+                }, 1000);
+                
+            }, 2500);
+        }
+    </script>
+
         function procesarPago(e) {
             e.preventDefault();
             alert("¡Excelente! Diseño de métodos múltiples integrado. Próximo paso real: Conectar las APIs de MercadoPago, Stripe o Google Pay.");
