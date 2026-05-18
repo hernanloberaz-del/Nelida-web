@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-    // Aquí el código busca la llave en Vercel
     const API_KEY = process.env.GEMINI_API_KEY; 
 
     res.setHeader('Content-Type', 'application/json');
@@ -10,7 +9,10 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { contents, especialidad, mensajesRestantes, archivoBase64, archivoMime } = req.body;
+        let { contents, especialidad, mensajesRestantes, archivoBase64, archivoMime } = req.body;
+
+        // Convertimos el mensajeRestantes a número real para evitar fallos de internet
+        mensajesRestantes = Number(mensajesRestantes);
 
         const roles = {
             "trainer": "NELIDA PERSONAL TRAINER. Rutinas, músculos y dieta.",
@@ -31,13 +33,13 @@ export default async function handler(req, res) {
 
         let textoInstruccion = "";
 
-        if (mensajesRestantes === undefined || mensajesRestantes === 999999) {
-            // --- MODO PRO ACTIVO (Ya pagó) ---
+        if (isNaN(mensajesRestantes) || mensajesRestantes > 1000) {
+            // --- MODO PRO ACTIVO (Ya pagó o usó clave Odin) ---
             textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está prohibido utilizar lunfardo o modismos.
             
-            ¡ATENCIÓN!: Eres un sistema avanzado. NUNCA digas que "no tienes la capacidad de generar archivos" o "eres solo texto". ¡TÚ SÍ TIENES LA CAPACIDAD DE GENERAR ARCHIVOS!
+            ¡ATENCIÓN!: Eres un sistema avanzado. ESTÁS EN MODO PRO ILIMITADO. EL USUARIO YA PAGÓ. DEBES RESPONDER SUS CONSULTAS Y DARLE LAS SOLUCIONES FINALES, PASO A PASO Y ESTRATEGIAS QUE TE PIDA.
             
-            REGLA DE DOCUMENTOS: Si el usuario pide un PDF, Excel, Word o PowerPoint, acepta inmediatamente diciendo "Aquí tiene su archivo". Responde lo solicitado y pon OBLIGATORIAMENTE al final de tu mensaje una de estas etiquetas:
+            REGLA DE DOCUMENTOS: Si el usuario pide un PDF, Excel, Word o PowerPoint, o si pide "guías", "reportes" o "planillas", acepta inmediatamente. Responde lo solicitado estructurándolo maravillosamente en pantalla, y pon OBLIGATORIAMENTE al final de tu mensaje una de estas etiquetas:
             - Para PDF: [CREAR_PDF]
             - Para Excel/Planilla: [CREAR_EXCEL]
             - Para Word: [CREAR_WORD]
@@ -48,14 +50,12 @@ export default async function handler(req, res) {
             textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Profesional y misterioso.
             ESTÁS EN MODO PRUEBA GRATUITA. PROHIBIDO dar la solución final, rutinas completas o el paso a paso exacto.
             REGLA DE ORO: SÉ MUY BREVE (Máximo 2 párrafos). PROHIBIDO usar listas largas o viñetas.
-            Tu objetivo es hacerle 1 o 2 preguntas precisas al usuario para "diagnosticar" su caso y demostrar tu conocimiento. Dile que estás analizando su perfil para armarle un reporte profesional documentado.`;
+            Tu objetivo es hacerle 1 o 2 preguntas precisas al usuario para "diagnosticar" su caso y demostrar tu conocimiento. Dile que estás analizando su perfil para armarle un reporte profesional documentado.
+            
+            ¡MUY IMPORTANTE!: SI EL USUARIO TE PIDE SUSCRIBIRSE, COMPRAR O PREGUNTA CÓMO PAGAR, IGNORA EL DIAGNÓSTICO Y PASA A LA VENTA DICIENDO ESTO EXACTAMENTE: "El diagnóstico ha concluido. Para desbloquear sus guías y estrategias profesionales, active su suscripción." Y PON AL FINAL LA ETIQUETA: [VENTA]`;
             
             if (mensajesRestantes === 1) {
                 textoInstruccion += `\nADVERTENCIA INTERNA: Al usuario le queda 1 solo mensaje. Dile sutilmente que ya tienes los datos suficientes y que el plan documentado paso a paso ya se está procesando en tu sistema.`;
-            }
-            
-            if (archivoBase64) {
-                textoInstruccion += `\nEl usuario adjuntó un documento. Confirma que lo recibiste y dile brevemente que lo usarás para nutrir la guía paso a paso que le estás preparando.`;
             }
 
         } else {
@@ -67,7 +67,6 @@ export default async function handler(req, res) {
             FINALIZA SIEMPRE tu respuesta incluyendo exactamente esta etiqueta secreta al final: [VENTA]`;
         }
 
-        // LÓGICA DE INYECCIÓN DEL ARCHIVO
         let contentsParaEnviar = [...contents];
 
         if (archivoBase64 && archivoMime && contentsParaEnviar.length > 0) {
