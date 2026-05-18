@@ -37,11 +37,13 @@
             border-radius: 20px;
             box-shadow: 0 0 40px rgba(0, 255, 204, 0.1);
             overflow: hidden;
+            flex-wrap: wrap; /* Para pantallas más chicas */
         }
 
         /* PANEL IZQUIERDO - RESUMEN */
         .summary-panel {
             flex: 1;
+            min-width: 300px;
             background: linear-gradient(135deg, rgba(142,68,173,0.2) 0%, rgba(0,0,0,0) 100%);
             padding: 40px;
             border-right: 1px solid rgba(255,255,255,0.1);
@@ -92,39 +94,55 @@
         /* PANEL DERECHO - FORMULARIO DE PAGO */
         .payment-panel {
             flex: 1.2;
+            min-width: 350px;
             padding: 40px;
         }
 
         .payment-panel h2 {
             font-family: 'Orbitron', sans-serif;
             margin-top: 0;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
             font-size: 1.4em;
             color: #fff;
         }
 
+        /* GRILLA DE MÉTODOS DE PAGO */
         .payment-methods {
-            display: flex;
-            gap: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
             margin-bottom: 25px;
         }
 
         .method-btn {
-            flex: 1;
             background: rgba(255,255,255,0.05);
             border: 1px solid rgba(255,255,255,0.2);
             color: white;
-            padding: 12px;
+            padding: 12px 8px;
             border-radius: 8px;
             cursor: pointer;
             transition: 0.3s;
             font-weight: bold;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .method-btn:hover {
+            background: rgba(255,255,255,0.1);
         }
 
         .method-btn.active {
             border-color: var(--neon-purple);
             background: rgba(142, 68, 173, 0.2);
+            box-shadow: 0 0 10px rgba(142, 68, 173, 0.3);
         }
+
+        /* COLORES ESPECÍFICOS PARA MÉTODOS */
+        .btn-mp.active { border-color: #009ee3; background: rgba(0, 158, 227, 0.2); box-shadow: 0 0 10px rgba(0, 158, 227, 0.3); }
+        .btn-gpay.active { border-color: #ffffff; background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
 
         .form-group {
             margin-bottom: 20px;
@@ -226,18 +244,20 @@
             <h2>Detalles de Pago</h2>
             
             <div class="payment-methods">
-                <button class="method-btn active">💳 Tarjeta (Stripe)</button>
-                <button class="method-btn">🅿️ PayPal</button>
+                <button type="button" class="method-btn active" onclick="seleccionarMetodo(this)">💳 Tarjeta</button>
+                <button type="button" class="method-btn btn-mp" onclick="seleccionarMetodo(this)">🤝 Mercado Pago</button>
+                <button type="button" class="method-btn btn-gpay" onclick="seleccionarMetodo(this)">📱 Google Pay</button>
+                <button type="button" class="method-btn" onclick="seleccionarMetodo(this)">🅿️ PayPal</button>
             </div>
 
             <form onsubmit="procesarPago(event)">
                 <div class="form-group">
-                    <label>Nombre en la tarjeta</label>
-                    <input type="text" placeholder="Ej: John Doe" required>
+                    <label>Nombre en la tarjeta / Titular</label>
+                    <input type="text" placeholder="Ej: Hernán Muñoz" required>
                 </div>
                 
                 <div class="form-group">
-                    <label>Número de Tarjeta</label>
+                    <label>Número de Tarjeta / Cuenta</label>
                     <input type="text" placeholder="0000 0000 0000 0000" maxlength="19" required>
                 </div>
 
@@ -262,10 +282,19 @@
     </div>
 
     <script>
+        // Función para cambiar el estilo visual del método seleccionado
+        function seleccionarMetodo(botonSeleccionado) {
+            // Buscamos todos los botones y les quitamos la clase "active"
+            const botones = document.querySelectorAll('.method-btn');
+            botones.forEach(btn => btn.classList.remove('active'));
+            
+            // Le agregamos la clase "active" solo al botón que hicimos clic
+            botonSeleccionado.classList.add('active');
+        }
+
         function procesarPago(e) {
             e.preventDefault();
-            // Acá conectaremos la pasarela real más adelante
-            alert("¡Conexión segura establecida! Este es el diseño visual. El próximo paso es conectar las claves de Stripe o Lemon Squeezy para procesar dólares reales.");
+            alert("¡Excelente! Diseño de métodos múltiples integrado. Próximo paso real: Conectar las APIs de MercadoPago, Stripe o Google Pay.");
         }
     </script>
 </body>
