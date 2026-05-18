@@ -115,7 +115,8 @@
             }, 800);
         }
 
-        let mensajesRestantes = esUsuarioPro ? 999999 : 3; 
+        // CRÉDITOS ACTUALIZADOS: 5 de prueba en vez de 3
+        let mensajesRestantes = esUsuarioPro ? 999999 : 5; 
 
         function actualizarContador() {
             const ui = document.getElementById('contador-ui');
@@ -135,6 +136,7 @@
         setTimeout(actualizarContador, 200);
 
         window.botonAudioActivo = null;
+        window.textosAudio = window.textosAudio || {}; 
 
         let archivoDataBase64 = null;
         let archivoMimeType = null;
@@ -215,7 +217,6 @@
                 return;
             }
 
-            // NUEVA PUERTA TRASERA: Para borrar la memoria PRO y probar como cliente nuevo
             if (texto === "/Reset2026") {
                 localStorage.removeItem('nelida_pro');
                 input.value = "";
@@ -293,14 +294,15 @@
 
                     historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
                     
-                    // Asegurarnos de que el texto no rompa el atributo HTML
-                    const textoSeguroHTML = encodeURIComponent(respuesta);
+                    // Guardamos el texto en memoria indexado por su ID Unico
+                    window.textosAudio[idMsgUnico] = encodeURIComponent(respuesta);
 
+                    // El botón ahora llama al ID, no lleva el texto adentro
                     zona.innerHTML += `
                         <div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">
                             <div id="${idMsgUnico}">${marked.parse(respuesta)}</div>
                             <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-                                <button onclick="window.hablar(this, decodeURIComponent(this.getAttribute('data-texto')))" data-texto="${textoSeguroHTML}" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s;" title="Control de audio">
+                                <button onclick="window.hablar(this, '${idMsgUnico}')" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s;" title="Control de audio">
                                     🔊 Escuchar
                                 </button>
                                 ${botonesGenerados}
@@ -381,75 +383,83 @@
             pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' });
         };
 
-        // MOTOR DE AUDIO CON CORRECCIÓN DEL BUG DE CHROME
-        window.hablar = (btnElement, texto) => {
+        // LA SOLUCIÓN DEFINITIVA DE AUDIO
+        window.hablar = (btnElement, idMsgUnico) => {
             const synth = window.speechSynthesis;
+            const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*`_]/g, '');
             
-            // Forzar limpieza si el motor de fondo se bugueó
-            if (!synth.speaking && window.botonAudioActivo) {
-                window.botonAudioActivo.innerHTML = '🔊 Escuchar'; 
-                window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)'; 
-                window.botonAudioActivo.style.borderColor = 'var(--neon-green)'; 
-                window.botonAudioActivo = null;
-            }
-
             if (window.botonAudioActivo === btnElement) {
                 if (synth.speaking && !synth.paused) { 
                     synth.pause(); 
                     btnElement.innerHTML = '▶️ Continuar'; 
                     btnElement.style.background = 'rgba(255, 204, 0, 0.2)'; 
                     btnElement.style.borderColor = '#ffcc00'; 
+                    return;
                 } 
-                else if (synth.paused) { 
+                if (synth.paused) { 
                     synth.resume(); 
                     btnElement.innerHTML = '⏸️ Pausar'; 
                     btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; 
                     btnElement.style.borderColor = 'var(--neon-purple)'; 
+                    return;
                 } 
-            } else {
-                if (window.botonAudioActivo) { 
-                    window.botonAudioActivo.innerHTML = '🔊 Escuchar'; 
-                    window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)'; 
-                    window.botonAudioActivo.style.borderColor = 'var(--neon-green)'; 
-                }
-                
-                synth.cancel(); // Matar proceso zombie
-                
-                setTimeout(() => {
-                    iniciarLectura(btnElement, texto, synth);
-                }, 150); // Respiro más largo para Chrome
+            } 
+
+            // Si es otro botón o el audio ya había terminado, matamos todo proceso
+            synth.cancel(); 
+            if (window.speechInterval) clearInterval(window.speechInterval);
+
+            // Reseteamos botón anterior si quedó colgado
+            if (window.botonAudioActivo && window.botonAudioActivo !== btnElement) { 
+                window.botonAudioActivo.innerHTML = '🔊 Escuchar'; 
+                window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)'; 
+                window.botonAudioActivo.style.borderColor = 'var(--neon-green)'; 
             }
+
+            window.botonAudioActivo = btnElement;
+            btnElement.innerHTML = '⏳ Cargando...';
+
+            setTimeout(() => {
+                const lectura = new SpeechSynthesisUtterance(textoLimpio);
+                lectura.lang = 'es-AR'; 
+                
+                lectura.onstart = () => {
+                    btnElement.innerHTML = '⏸️ Pausar'; 
+                    btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; 
+                    btnElement.style.borderColor = 'var(--neon-purple)';
+                };
+
+                lectura.onend = () => { 
+                    btnElement.innerHTML = '🔊 Escuchar'; 
+                    btnElement.style.background = 'rgba(0, 255, 204, 0.15)'; 
+                    btnElement.style.borderColor = 'var(--neon-green)'; 
+                    window.botonAudioActivo = null; 
+                    clearInterval(window.speechInterval);
+                };
+                
+                lectura.onerror = () => {
+                    btnElement.innerHTML = '🔊 Escuchar'; 
+                    btnElement.style.background = 'rgba(0, 255, 204, 0.15)'; 
+                    btnElement.style.borderColor = 'var(--neon-green)'; 
+                    window.botonAudioActivo = null; 
+                    clearInterval(window.speechInterval);
+                };
+
+                window.utteranceActual = lectura; // Evita que Chrome lo borre
+                
+                // Hack para engañar a Chrome en textos largos
+                window.speechInterval = setInterval(() => {
+                    if (synth.speaking && !synth.paused) {
+                        synth.pause();
+                        synth.resume();
+                    } else if (!synth.speaking) {
+                        clearInterval(window.speechInterval);
+                    }
+                }, 14000);
+
+                synth.speak(lectura); 
+            }, 250); 
         };
-
-        function iniciarLectura(btn, texto, synth) {
-            window.botonAudioActivo = btn;
-            btn.innerHTML = '⏸️ Pausar'; 
-            btn.style.background = 'rgba(142, 68, 173, 0.3)'; 
-            btn.style.borderColor = 'var(--neon-purple)';
-            
-            const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
-            lectura.lang = 'es-AR'; 
-            
-            lectura.onend = () => { 
-                btn.innerHTML = '🔊 Escuchar'; 
-                btn.style.background = 'rgba(0, 255, 204, 0.15)'; 
-                btn.style.borderColor = 'var(--neon-green)'; 
-                window.botonAudioActivo = null; 
-            };
-            
-            // Chrome bugfix extra
-            lectura.onerror = () => {
-                btn.innerHTML = '🔊 Escuchar'; 
-                btn.style.background = 'rgba(0, 255, 204, 0.15)'; 
-                btn.style.borderColor = 'var(--neon-green)'; 
-                window.botonAudioActivo = null; 
-            }
-
-            // Guardar en global para evitar que Chrome lo borre
-            window.utteranceActual = lectura;
-            
-            synth.speak(lectura); 
-        }
     </script>
 </body>
 </html>
