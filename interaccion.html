@@ -266,11 +266,9 @@
                     let botonesGenerados = "";
                     
                     // --- DETECTOR ANTI-FALLAS DE VENTAS ---
-                    // Normalizamos el texto (le quitamos tildes y lo hacemos minúscula) para no perder ninguna venta
                     let textoNormalizado = respuesta.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                     
                     if (textoNormalizado.includes('nelida pro') || textoNormalizado.includes('suscrip') || textoNormalizado.includes('suscrib') || respuesta.includes('[VENTA]')) {
-                        // Limpiamos la etiqueta secreta si existe para que no se vea en pantalla
                         respuesta = respuesta.replace('[VENTA]', '');
                         botonesGenerados += `<button onclick="window.location.href = 'checkout.html'" class="descarga-dinamica" style="background: var(--neon-purple); border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(142, 68, 173, 0.4);">💎 OBTENER ACCESO PRO</button>`;
                     }
@@ -294,20 +292,22 @@
                     // -----------------------------------------------
 
                     historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
-                    const safeRespuesta = respuesta.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    
+                    // --- SOLUCIÓN DE AUDIO: Guardamos el texto limpio en la memoria ---
+                    window.textosAudio = window.textosAudio || {};
+                    window.textosAudio[idMsgUnico] = respuesta;
 
                     zona.innerHTML += `
                         <div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">
                             <div id="${idMsgUnico}">${marked.parse(respuesta)}</div>
                             <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-                                <button onclick="window.hablar(this, this.getAttribute('data-texto'))" data-texto="${safeRespuesta}" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s;" title="Control de audio">
+                                <button onclick="window.hablar(this, window.textosAudio['${idMsgUnico}'])" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s;" title="Control de audio">
                                     🔊 Escuchar
                                 </button>
                                 ${botonesGenerados}
                             </div>
                         </div>`;
                     
-                    // Si se le acabaron en este último turno, tiramos el botón gigante también
                     if (mensajesRestantes === 0 && !botonesGenerados.includes('OBTENER ACCESO PRO')) {
                         zona.innerHTML += `
                         <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
@@ -388,22 +388,4 @@
             const synth = window.speechSynthesis;
             if (window.botonAudioActivo === btnElement) {
                 if (synth.speaking && !synth.paused) { synth.pause(); btnElement.innerHTML = '▶️ Continuar'; btnElement.style.background = 'rgba(255, 204, 0, 0.2)'; btnElement.style.borderColor = '#ffcc00'; } 
-                else if (synth.paused) { synth.resume(); btnElement.innerHTML = '⏸️ Pausar'; btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; btnElement.style.borderColor = 'var(--neon-purple)'; } 
-                else { iniciarLectura(btnElement, texto, synth); }
-            } else {
-                if (window.botonAudioActivo) { window.botonAudioActivo.innerHTML = '🔊 Escuchar'; window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)'; window.botonAudioActivo.style.borderColor = 'var(--neon-green)'; }
-                synth.cancel(); iniciarLectura(btnElement, texto, synth);
-            }
-        };
-
-        function iniciarLectura(btn, texto, synth) {
-            window.botonAudioActivo = btn;
-            btn.innerHTML = '⏸️ Pausar'; btn.style.background = 'rgba(142, 68, 173, 0.3)'; btn.style.borderColor = 'var(--neon-purple)';
-            const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
-            lectura.lang = 'es-AR';
-            lectura.onend = () => { btn.innerHTML = '🔊 Escuchar'; btn.style.background = 'rgba(0, 255, 204, 0.15)'; btn.style.borderColor = 'var(--neon-green)'; window.botonAudioActivo = null; };
-            synth.speak(lectura);
-        }
-    </script>
-</body>
-</html>
+                else if (synth.paused) { synth.resume(); btnElement.innerHTML = '⏸️ Pausar'; btnElement.style.background = 'rgba(142, 68, 173, 0.
