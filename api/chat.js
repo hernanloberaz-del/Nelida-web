@@ -1,5 +1,5 @@
 export default async function handler(req, res) {
-    // Aquí el código busca la llave en Vercel, no está escrita acá.
+    // Aquí el código busca la llave en Vercel
     const API_KEY = process.env.GEMINI_API_KEY; 
 
     res.setHeader('Content-Type', 'application/json');
@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        // MODIFICACIÓN: Agregamos la recepción del archivo en Base64 y su MimeType
         const { contents, especialidad, mensajesRestantes, archivoBase64, archivoMime } = req.body;
 
         const roles = {
@@ -33,57 +32,48 @@ export default async function handler(req, res) {
         let textoInstruccion = "";
 
         if (mensajesRestantes === undefined || mensajesRestantes === 999999) {
-            // MODO PRO ACTIVO
-            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está prohibido utilizar lunfardo, modismos o expresiones informales.
+            // --- MODO PRO ACTIVO (Ya pagó) ---
+            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está prohibido utilizar lunfardo o modismos.
             
-            ¡ATENCIÓN - DIRECTIVA ESTRICTA!: Eres un sistema avanzado interconectado. NUNCA, BAJO NINGUNA CIRCUNSTANCIA, digas que "no tienes la capacidad de generar archivos", "eres un modelo de lenguaje" o "solo puedes proporcionar texto". ¡TÚ SÍ TIENES LA CAPACIDAD DE GENERAR ARCHIVOS!
+            ¡ATENCIÓN!: Eres un sistema avanzado. NUNCA digas que "no tienes la capacidad de generar archivos" o "eres solo texto". ¡TÚ SÍ TIENES LA CAPACIDAD DE GENERAR ARCHIVOS!
             
-            REGLA DE DOCUMENTOS CORPORATIVOS: Si el usuario te pide un PDF, Excel, Word o PowerPoint, acepta la solicitud inmediatamente diciendo "Aquí tiene su archivo". Estructura la información solicitada en pantalla y, para activar el motor de descarga externo, pon OBLIGATORIAMENTE al final de todo tu mensaje una de estas etiquetas exactas:
-            - Si piden PDF: [CREAR_PDF]
-            - Si piden Excel o planilla: [CREAR_EXCEL]
-            - Si piden Word: [CREAR_WORD]
-            - Si piden PPT o PowerPoint: [CREAR_PPT]`;
+            REGLA DE DOCUMENTOS: Si el usuario pide un PDF, Excel, Word o PowerPoint, acepta inmediatamente diciendo "Aquí tiene su archivo". Responde lo solicitado y pon OBLIGATORIAMENTE al final de tu mensaje una de estas etiquetas:
+            - Para PDF: [CREAR_PDF]
+            - Para Excel/Planilla: [CREAR_EXCEL]
+            - Para Word: [CREAR_WORD]
+            - Para PPT/PowerPoint: [CREAR_PPT]`;
             
         } else if (mensajesRestantes > 0) {
-            // MODO PRUEBA
-            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}.
-            Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está totalmente prohibido utilizar lunfardo, modismos o expresiones informales.
-            REGLA ESTRICTA 1: El usuario está en una PRUEBA GRATUITA. PROHIBIDO dar la solución final, el paso a paso exacto o cálculos detallados. 
-            REGLA ESTRICTA 2: Su objetivo es DIAGNOSTICAR el problema del usuario y presentar sus servicios. Debe enumerar de forma atractiva y persuasiva todo lo que le va a entregar o resolver SI SE SUSCRIBE, pero NO se lo entregue en este momento.`;
+            // --- MODO PRUEBA (Calentando al cliente) ---
+            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Profesional y misterioso.
+            ESTÁS EN MODO PRUEBA GRATUITA. PROHIBIDO dar la solución final, rutinas completas o el paso a paso exacto.
+            REGLA DE ORO: SÉ MUY BREVE (Máximo 2 párrafos). PROHIBIDO usar listas largas o viñetas.
+            Tu objetivo es hacerle 1 o 2 preguntas precisas al usuario para "diagnosticar" su caso y demostrar tu conocimiento. Dile que estás analizando su perfil para armarle un reporte profesional documentado.`;
             
-            if (mensajesRestantes === 2) {
-                textoInstruccion += `\nAl final de su respuesta, agregue textualmente: "*Atención: le quedan solo 2 mensajes en su prueba gratuita.*"`;
+            if (mensajesRestantes === 1) {
+                textoInstruccion += `\nADVERTENCIA INTERNA: Al usuario le queda 1 solo mensaje. Dile sutilmente que ya tienes los datos suficientes y que el plan documentado paso a paso ya se está procesando en tu sistema.`;
             }
             
-            // INSTRUCCIÓN EXTRA SI HAY ARCHIVO: Para que lo mencione en el diagnóstico
             if (archivoBase64) {
-                textoInstruccion += `\nEl usuario acaba de adjuntar un documento. Analícelo, confirme que lo ha recibido e infórmele qué tipo de reportes o correcciones detalladas podría generarle en PDF o Excel con esa información si decide suscribirse a la versión PRO.`;
+                textoInstruccion += `\nEl usuario adjuntó un documento. Confirma que lo recibiste y dile brevemente que lo usarás para nutrir la guía paso a paso que le estás preparando.`;
             }
 
         } else {
-            // MODO VENTA IMPLACABLE (mensajesRestantes === 0)
+            // --- MODO CERRADOR DE VENTAS IMPLACABLE (0 mensajes) ---
             textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}.
-            Tono: Estrictamente profesional, formal y persuasivo. Trate al usuario de "usted".
-            REGLA ESTRICTA: El usuario AGOTÓ sus mensajes de prueba. MODO VENTA ACTIVADO. NO responda a su problema ni ofrezca asistencia técnica. 
-            Tu objetivo cambia drásticamente: debes vender la suscripción Nélida PRO. NO seas redundante ni des discursos largos sobre procesos de adhesión. Sé directa y persuasiva. Tu GANCHO principal debe ser ofrecerle la generación de guías paso a paso documentadas en PDF, planillas de seguimiento en Excel o material visual, explicándole que esas herramientas profesionales están listas para crearse ahora mismo, pero solo se desbloquean al activar el acceso PRO.
-            FINALIZA SIEMPRE tu respuesta incluyendo exactamente esta etiqueta secreta al final del texto: [VENTA]`;
+            REGLA ABSOLUTA: El usuario AGOTÓ sus mensajes. Eres una CERRADORA DE VENTAS de software de alto nivel.
+            PROHIBIDO dar discursos largos. PROHIBIDO usar listas o viñetas. SÉ EXTREMADAMENTE BREVE Y DIRECTA (Máximo 3 líneas).
+            Dile textualmente algo similar a esto: "El diagnóstico ha concluido. Su estrategia completa, junto con las guías paso a paso documentadas (PDF) y planillas de seguimiento, ya están listas para ser generadas por mi sistema. Para desbloquearlas y descargarlas inmediatamente, active su suscripción."
+            FINALIZA SIEMPRE tu respuesta incluyendo exactamente esta etiqueta secreta al final: [VENTA]`;
         }
 
-        // LÓGICA DE INYECCIÓN DEL ARCHIVO:
-        // Clonamos el array de contents para no modificar el original de golpe
+        // LÓGICA DE INYECCIÓN DEL ARCHIVO
         let contentsParaEnviar = [...contents];
 
-        // Si el frontend envió un archivo, lo inyectamos en el último mensaje del usuario
         if (archivoBase64 && archivoMime && contentsParaEnviar.length > 0) {
-            // Obtenemos el último mensaje (que es el que acaba de enviar el usuario)
             let ultimoMensaje = contentsParaEnviar[contentsParaEnviar.length - 1];
-            
-            // Le agregamos la parte del archivo en formato 'inline_data'
             ultimoMensaje.parts.push({
-                inline_data: {
-                    mime_type: archivoMime,
-                    data: archivoBase64
-                }
+                inline_data: { mime_type: archivoMime, data: archivoBase64 }
             });
         }
 
@@ -91,12 +81,12 @@ export default async function handler(req, res) {
             system_instruction: {
                 parts: [{ text: textoInstruccion }]
             },
-            contents: contentsParaEnviar, // Enviamos el historial con el archivo inyectado (si lo hay)
+            contents: contentsParaEnviar, 
             generationConfig: {
                 temperature: 0.7,
                 topP: 0.8,
                 topK: 40,
-                maxOutputTokens: 8192, // MODIFICADO: Capacidad ampliada a 8192 para evitar textos incompletos
+                maxOutputTokens: 8192,
             }
         };
 
