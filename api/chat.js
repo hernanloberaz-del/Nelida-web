@@ -90,7 +90,7 @@ export default async function handler(req, res) {
                 temperature: 0.7,
                 topP: 0.8,
                 topK: 40,
-                maxOutputTokens: 1024,
+                maxOutputTokens: 8192, // MODIFICADO: Capacidad ampliada a 8192 para evitar textos incompletos
             }
         };
 
