@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Suscripción Nélida PRO - Pago Seguro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #00ffcc;
+            --neon-purple: #8e44ad;
+            --glass-bg: rgba(0, 0, 0, 0.75);
+            --glass-border: rgba(0, 255, 204, 0.3);
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .checkout-container {
+            display: flex;
+            width: 900px;
+            max-width: 95%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.1);
+            overflow: hidden;
+        }
+
+        /* PANEL IZQUIERDO - RESUMEN */
+        .summary-panel {
+            flex: 1;
+            background: linear-gradient(135deg, rgba(142,68,173,0.2) 0%, rgba(0,0,0,0) 100%);
+            padding: 40px;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .summary-panel h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-green);
+            margin-top: 0;
+            font-size: 1.8em;
+            letter-spacing: 2px;
+        }
+
+        .price-tag {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #fff;
+        }
+
+        .price-tag span {
+            font-size: 0.4em;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 30px;
+        }
+
+        .benefits-list li {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            font-size: 1.05em;
+        }
+
+        .benefits-list li::before {
+            content: '✓';
+            color: var(--neon-green);
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        /* PANEL DERECHO - FORMULARIO DE PAGO */
+        .payment-panel {
+            flex: 1.2;
+            padding: 40px;
+        }
+
+        .payment-panel h2 {
+            font-family: 'Orbitron', sans-serif;
+            margin-top: 0;
+            margin-bottom: 30px;
+            font-size: 1.4em;
+            color: #fff;
+        }
+
+        .payment-methods {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .method-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+
+        .method-btn.active {
+            border-color: var(--neon-purple);
+            background: rgba(142, 68, 173, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .form-group input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 1em;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(0,255,204,0.2);
+        }
+
+        .row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .row .form-group {
+            flex: 1;
+        }
+
+        .pay-btn {
+            width: 100%;
+            background: var(--neon-green);
+            color: #000;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 1.2em;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+        }
+
+        .pay-btn:hover {
+            background: #fff;
+            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .secure-badge {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.8em;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="checkout-container">
+        <div class="summary-panel">
+            <h1>NÉLIDA PRO</h1>
+            <p style="color: var(--text-muted); line-height: 1.5;">Desbloquea el potencial completo de tu asistente de IA especializado.</p>
+            
+            <div class="price-tag">
+                $14.99 <span>USD / mes</span>
+            </div>
+
+            <ul class="benefits-list">
+                <li>Mensajes ilimitados 24/7</li>
+                <li>Generación de reportes PDF</li>
+                <li>Creación de planillas Excel</li>
+                <li>Presentaciones PowerPoint (PPT)</li>
+                <li>Memoria de contexto extendida</li>
+                <li>Soporte prioritario</li>
+            </ul>
+        </div>
+
+        <div class="payment-panel">
+            <h2>Detalles de Pago</h2>
+            
+            <div class="payment-methods">
+                <button class="method-btn active">💳 Tarjeta (Stripe)</button>
+                <button class="method-btn">🅿️ PayPal</button>
+            </div>
+
+            <form onsubmit="procesarPago(event)">
+                <div class="form-group">
+                    <label>Nombre en la tarjeta</label>
+                    <input type="text" placeholder="Ej: John Doe" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Número de Tarjeta</label>
+                    <input type="text" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                </div>
+
+                <div class="row">
+                    <div class="form-group">
+                        <label>Vencimiento</label>
+                        <input type="text" placeholder="MM/AA" maxlength="5" required>
+                    </div>
+                    <div class="form-group">
+                        <label>CVC / CVV</label>
+                        <input type="password" placeholder="123" maxlength="4" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="pay-btn">SUSCRIBIRSE AHORA</button>
+            </form>
+
+            <div class="secure-badge">
+                🔒 Pagos cifrados de extremo a extremo con seguridad bancaria de 256 bits.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function procesarPago(e) {
+            e.preventDefault();
+            // Acá conectaremos la pasarela real más adelante
+            alert("¡Conexión segura establecida! Este es el diseño visual. El próximo paso es conectar las claves de Stripe o Lemon Squeezy para procesar dólares reales.");
+        }
+    </script>
+</body>
+</html>
