@@ -100,7 +100,27 @@
         let facetaActiva = "ayuda";
         let historialAcumulado = [];
         
-        let mensajesRestantes = 3; 
+        // --- SISTEMA DE VALIDACIÓN PRO Y MEMORIA (INYECTADO AQUÍ) ---
+        let esUsuarioPro = localStorage.getItem('nelida_pro') === 'true';
+
+        const parametrosURL = new URLSearchParams(window.location.search);
+        if (parametrosURL.get('pago') === 'ok') {
+            esUsuarioPro = true;
+            localStorage.setItem('nelida_pro', 'true'); // Guardamos en memoria
+            
+            // Limpiamos la URL para que no quede el "?pago=ok" a la vista
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Damos la bienvenida
+            setTimeout(() => {
+                alert("💎 ¡Pago exitoso! Bienvenido a Nélida PRO. Ahora tenés acceso ilimitado a todas las herramientas.");
+            }, 800);
+        }
+
+        // Si es pro le damos infinito, si no, le damos 3.
+        let mensajesRestantes = esUsuarioPro ? Infinity : 3; 
+        // -------------------------------------------------------------
+
         window.botonAudioActivo = null;
 
         // NUEVAS VARIABLES PARA EL ARCHIVO
@@ -180,7 +200,7 @@
 
             // --- PUERTA TRASERA SEGURA (SOLO PARA HERNÁN) ---
             if (texto === "/Odin2026") {
-                mensajesRestantes = undefined;
+                mensajesRestantes = Infinity; // Actualizado a Infinity para alinear con el nuevo sistema
                 input.value = "";
                 zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: Créditos recargados.</div>`;
                 zona.scrollTop = zona.scrollHeight;
@@ -204,7 +224,7 @@
             historialAcumulado.push({ role: "user", parts: [{ text: texto || "Revisa el documento adjunto." }] });
 
             if (mensajesRestantes > 0) {
-                mensajesRestantes--;
+                mensajesRestantes--; // Si es Infinity, restarle 1 sigue siendo Infinity. ¡Magia matemática!
             }
 
             try {
@@ -273,7 +293,7 @@
                                 💎 OBTENER ACCESO PRO ILIMITADO
                             </button>
                         </div>`;
-                }
+                    }
 
                 } else {
                     const errorMsg = data.error?.message || data.error || "Error de respuesta";
