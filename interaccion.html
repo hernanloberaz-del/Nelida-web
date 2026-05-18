@@ -23,7 +23,11 @@
         .contenedor-estetico { height: 80%; background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: 15px; box-shadow: 0 0 25px rgba(0, 255, 204, 0.1); display: flex; flex-direction: column; overflow: hidden; animation: breathe 5s infinite ease-in-out; }
         @keyframes breathe { 0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 204, 0.1); } 50% { box-shadow: 0 0 30px rgba(0, 255, 204, 0.25); border-color: var(--neon-green); } }
         #caja-chat { width: 45%; }
+        
+        /* Modificado para incluir el contador a la derecha */
         .status-bar { padding: 10px 20px; background: rgba(0, 255, 204, 0.1); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; letter-spacing: 2px; text-transform: uppercase; }
+        #contador-ui { font-weight: bold; font-size: 1.1em; transition: 0.3s; }
+
         #zona-mensajes { flex: 1; overflow-y: auto; padding: 25px; color: #e0e0e0; font-size: 1.05em; line-height: 1.7; scrollbar-width: thin; scrollbar-color: var(--neon-green) transparent; }
         
         .input-box { display: flex; padding: 20px; gap: 12px; background: rgba(0, 0, 0, 0.5); border-top: 1px solid var(--glass-border); align-items: flex-end; }
@@ -51,6 +55,7 @@
         <div id="caja-chat" class="contenedor-estetico">
             <div class="status-bar">
                 <div><span id="label-especialidad">SISTEMA NÉLIDA</span></div>
+                <div id="contador-ui">Cargando sistema...</div>
             </div>
             <div id="zona-mensajes">
                 <p id="msg-inicial"><b>Nélida:</b> Sincronizando faceta...</p>
@@ -100,30 +105,42 @@
         let facetaActiva = "ayuda";
         let historialAcumulado = [];
         
-        // --- SISTEMA DE VALIDACIÓN PRO Y MEMORIA (INYECTADO AQUÍ) ---
         let esUsuarioPro = localStorage.getItem('nelida_pro') === 'true';
 
         const parametrosURL = new URLSearchParams(window.location.search);
         if (parametrosURL.get('pago') === 'ok') {
             esUsuarioPro = true;
-            localStorage.setItem('nelida_pro', 'true'); // Guardamos en memoria
-            
-            // Limpiamos la URL para que no quede el "?pago=ok" a la vista
+            localStorage.setItem('nelida_pro', 'true');
             window.history.replaceState({}, document.title, window.location.pathname);
-            
-            // Damos la bienvenida
             setTimeout(() => {
                 alert("💎 ¡Pago exitoso! Bienvenido a Nélida PRO. Ahora tenés acceso ilimitado a todas las herramientas.");
             }, 800);
         }
 
-        // Si es pro le damos un número altísimo, si no, le damos 3.
         let mensajesRestantes = esUsuarioPro ? 999999 : 3; 
-        // -------------------------------------------------------------
+
+        // --- SISTEMA DEL CONTADOR VISUAL ---
+        function actualizarContador() {
+            const ui = document.getElementById('contador-ui');
+            if (ui) {
+                if (mensajesRestantes > 1000) {
+                    ui.innerText = "💎 MODO PRO ACTIVO";
+                    ui.style.color = "var(--neon-purple)";
+                    ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
+                } else {
+                    ui.innerText = `🔋 Créditos de prueba: ${mensajesRestantes}`;
+                    ui.style.color = mensajesRestantes === 0 ? "#ff4d4d" : "var(--neon-green)";
+                    ui.style.textShadow = mensajesRestantes === 0 ? "0 0 10px rgba(255, 77, 77, 0.7)" : "0 0 10px rgba(0, 255, 204, 0.4)";
+                }
+            }
+        }
+        
+        // Ejecutamos el contador ni bien carga la página
+        setTimeout(actualizarContador, 200);
+        // ------------------------------------
 
         window.botonAudioActivo = null;
 
-        // NUEVAS VARIABLES PARA EL ARCHIVO
         let archivoDataBase64 = null;
         let archivoMimeType = null;
         let archivoNombre = null;
@@ -163,7 +180,6 @@
             } else { window.location.href = "login.html"; }
         });
 
-        // NUEVA FUNCIÓN: LEER EL ARCHIVO Y PASARLO A BASE64
         document.getElementById('archivoAdjunto').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -174,14 +190,12 @@
                 archivoMimeType = file.type || 'application/octet-stream';
                 archivoNombre = file.name;
 
-                // Mostrar el cartelito
                 document.getElementById('file-name').innerText = `📎 ${archivoNombre}`;
                 document.getElementById('file-indicator').style.display = 'flex';
             };
             reader.readAsDataURL(file);
         });
 
-        // NUEVA FUNCIÓN: QUITAR EL ARCHIVO SI SE ARREPIENTE
         window.quitarArchivo = () => {
             archivoDataBase64 = null;
             archivoMimeType = null;
@@ -195,12 +209,12 @@
             const zona = document.getElementById('zona-mensajes');
             const texto = input.value.trim();
             
-            // Si no hay ni texto ni archivo, no hacemos nada
             if (!texto && !archivoDataBase64) return;
 
             // --- PUERTA TRASERA SEGURA ---
             if (texto === "/Odin2026") {
-                mensajesRestantes = 999999; // Actualizado a 999999 para que no falle en el backend
+                mensajesRestantes = 999999; 
+                actualizarContador(); // Actualizamos UI
                 input.value = "";
                 zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: Créditos recargados.</div>`;
                 zona.scrollTop = zona.scrollHeight;
@@ -208,7 +222,6 @@
             }
             // ----------------------------------------------
 
-            // Mostrar el mensaje en pantalla (con el archivo si lo hay)
             let mensajePantalla = texto;
             if (archivoNombre) {
                 mensajePantalla += `<br><span style="color:var(--neon-green); font-size:0.85em;">📎 Archivo adjunto: ${archivoNombre}</span>`;
@@ -224,7 +237,8 @@
             historialAcumulado.push({ role: "user", parts: [{ text: texto || "Revisa el documento adjunto." }] });
 
             if (mensajesRestantes > 0) {
-                mensajesRestantes--; // Con 999999 alcanza para siempre
+                mensajesRestantes--; 
+                actualizarContador(); // Restamos y actualizamos la barra superior
             }
 
             try {
@@ -240,7 +254,6 @@
                     })
                 });
 
-                // LIMPIAMOS EL ARCHIVO DESPUÉS DE ENVIARLO
                 window.quitarArchivo();
 
                 const data = await response.json();
@@ -250,8 +263,17 @@
                     let respuesta = data.candidates[0].content.parts[0].text;
                     const idMsgUnico = "msg-block-" + Date.now();
                     
-                    // --- DETECTOR QUIRÚRGICO DE PALABRAS MÁGICAS ---
                     let botonesGenerados = "";
+                    
+                    // --- DETECTOR ANTI-FALLAS DE VENTAS ---
+                    // Normalizamos el texto (le quitamos tildes y lo hacemos minúscula) para no perder ninguna venta
+                    let textoNormalizado = respuesta.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    
+                    if (textoNormalizado.includes('nelida pro') || textoNormalizado.includes('suscrip') || textoNormalizado.includes('suscrib') || respuesta.includes('[VENTA]')) {
+                        // Limpiamos la etiqueta secreta si existe para que no se vea en pantalla
+                        respuesta = respuesta.replace('[VENTA]', '');
+                        botonesGenerados += `<button onclick="window.location.href = 'checkout.html'" class="descarga-dinamica" style="background: var(--neon-purple); border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(142, 68, 173, 0.4);">💎 OBTENER ACCESO PRO</button>`;
+                    }
                     
                     if (respuesta.includes('[CREAR_PDF]')) {
                         respuesta = respuesta.replace('[CREAR_PDF]', '');
@@ -274,7 +296,6 @@
                     historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
                     const safeRespuesta = respuesta.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-                    // INYECCIÓN DINÁMICA DE LOS BOTONES (Solo si existen)
                     zona.innerHTML += `
                         <div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">
                             <div id="${idMsgUnico}">${marked.parse(respuesta)}</div>
@@ -286,7 +307,8 @@
                             </div>
                         </div>`;
                     
-                    if (mensajesRestantes === 0) {
+                    // Si se le acabaron en este último turno, tiramos el botón gigante también
+                    if (mensajesRestantes === 0 && !botonesGenerados.includes('OBTENER ACCESO PRO')) {
                         zona.innerHTML += `
                         <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
                             <button style="background: var(--neon-purple); color: white; border: 1px solid var(--neon-green); padding: 15px 30px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 4px 15px rgba(142, 68, 173, 0.4);" onclick="window.location.href = 'checkout.html'">
@@ -301,7 +323,7 @@
                 }
             } catch (error) {
                 if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
-                window.quitarArchivo(); // Limpiar también si hay error
+                window.quitarArchivo();
                 zona.innerHTML += `<div style="color: #ff4d4d; margin-bottom: 10px;">Error de conexión.</div>`;
             }
             zona.scrollTop = zona.scrollHeight;
@@ -309,39 +331,24 @@
 
         // --- SISTEMA MAESTRO DE GENERACIÓN DE ARCHIVOS ---
 
-        // 1. GENERADOR DE PDF CORPORATIVO
         window.exportarPDF = (id) => {
             const element = document.getElementById(id);
             const clone = element.cloneNode(true);
-            
             clone.style.color = '#000000';
             clone.style.backgroundColor = '#ffffff';
             clone.style.padding = '30px';
             clone.style.fontFamily = 'Arial, sans-serif';
-            
-            const opt = {
-                margin:       15,
-                filename:     'Reporte_NelidaAI.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
+            const opt = { margin: 15, filename: 'Reporte_NelidaAI.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, backgroundColor: '#ffffff' }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
             html2pdf().set(opt).from(clone).save();
         };
 
-        // 2. GENERADOR DE EXCEL INTELIGENTE
         window.exportarExcel = (id) => {
             const element = document.getElementById(id);
             const tablaHtml = element.querySelector('table');
             let libroExcel;
-
-            if (tablaHtml) {
-                libroExcel = XLSX.utils.table_to_book(tablaHtml);
-            } else {
+            if (tablaHtml) { libroExcel = XLSX.utils.table_to_book(tablaHtml); } else {
                 const lineas = [];
-                element.querySelectorAll('p, li, h1, h2, h3').forEach(el => {
-                    lineas.push([el.innerText]);
-                });
+                element.querySelectorAll('p, li, h1, h2, h3').forEach(el => { lineas.push([el.innerText]); });
                 const hoja = XLSX.utils.aoa_to_sheet(lineas);
                 libroExcel = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(libroExcel, hoja, "Datos");
@@ -349,15 +356,9 @@
             XLSX.writeFile(libroExcel, 'Planilla_NelidaAI.xlsx');
         };
 
-        // 3. GENERADOR DE WORD IMPECABLE
         window.exportarWord = (id) => {
             const element = document.getElementById(id);
-            const htmlCompleto = `
-                <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-                <head><title>Documento Nélida AI</title><style>body { font-family: Arial, sans-serif; line-height: 1.6; color: #000; }</style></head>
-                <body>${element.innerHTML}</body>
-                </html>`;
-            
+            const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento Nélida AI</title><style>body { font-family: Arial, sans-serif; line-height: 1.6; color: #000; }</style></head><body>${element.innerHTML}</body></html>`;
             const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -368,78 +369,39 @@
             document.body.removeChild(a);
         };
 
-        // 4. GENERADOR DE DIAPOSITIVAS DE POWERPOINT
         window.exportarPPT = (id) => {
             const element = document.getElementById(id);
             let pptx = new pptxgen();
             let slide = pptx.addSlide();
-            
             let posicionY = 1.0;
             element.querySelectorAll('h1, h2, h3, p, li').forEach(el => {
                 if (posicionY < 6.0) {
                     let esTitulo = el.tagName.startsWith('H');
-                    slide.addText(el.innerText, { 
-                        x: 1.0, 
-                        y: posicionY, 
-                        w: 8.0, 
-                        h: esTitulo ? 0.5 : 0.8, 
-                        fontSize: esTitulo ? 24 : 14,
-                        bold: esTitulo,
-                        color: esTitulo ? '8E44AD' : '333333'
-                    });
+                    slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' });
                     posicionY += esTitulo ? 0.6 : 0.9;
-                } else {
-                    slide = pptx.addSlide();
-                    posicionY = 1.0;
-                }
+                } else { slide = pptx.addSlide(); posicionY = 1.0; }
             });
             pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' });
         };
 
         window.hablar = (btnElement, texto) => {
             const synth = window.speechSynthesis;
-
             if (window.botonAudioActivo === btnElement) {
-                if (synth.speaking && !synth.paused) {
-                    synth.pause();
-                    btnElement.innerHTML = '▶️ Continuar';
-                    btnElement.style.background = 'rgba(255, 204, 0, 0.2)'; 
-                    btnElement.style.borderColor = '#ffcc00';
-                } else if (synth.paused) {
-                    synth.resume();
-                    btnElement.innerHTML = '⏸️ Pausar';
-                    btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; 
-                    btnElement.style.borderColor = 'var(--neon-purple)';
-                } else {
-                    iniciarLectura(btnElement, texto, synth);
-                }
+                if (synth.speaking && !synth.paused) { synth.pause(); btnElement.innerHTML = '▶️ Continuar'; btnElement.style.background = 'rgba(255, 204, 0, 0.2)'; btnElement.style.borderColor = '#ffcc00'; } 
+                else if (synth.paused) { synth.resume(); btnElement.innerHTML = '⏸️ Pausar'; btnElement.style.background = 'rgba(142, 68, 173, 0.3)'; btnElement.style.borderColor = 'var(--neon-purple)'; } 
+                else { iniciarLectura(btnElement, texto, synth); }
             } else {
-                if (window.botonAudioActivo) {
-                    window.botonAudioActivo.innerHTML = '🔊 Escuchar';
-                    window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)';
-                    window.botonAudioActivo.style.borderColor = 'var(--neon-green)';
-                }
-                synth.cancel(); 
-                iniciarLectura(btnElement, texto, synth);
+                if (window.botonAudioActivo) { window.botonAudioActivo.innerHTML = '🔊 Escuchar'; window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)'; window.botonAudioActivo.style.borderColor = 'var(--neon-green)'; }
+                synth.cancel(); iniciarLectura(btnElement, texto, synth);
             }
         };
 
         function iniciarLectura(btn, texto, synth) {
             window.botonAudioActivo = btn;
-            btn.innerHTML = '⏸️ Pausar';
-            btn.style.background = 'rgba(142, 68, 173, 0.3)';
-            btn.style.borderColor = 'var(--neon-purple)';
-            
+            btn.innerHTML = '⏸️ Pausar'; btn.style.background = 'rgba(142, 68, 173, 0.3)'; btn.style.borderColor = 'var(--neon-purple)';
             const lectura = new SpeechSynthesisUtterance(texto.replace(/[#*`_]/g, ''));
             lectura.lang = 'es-AR';
-            
-            lectura.onend = () => {
-                btn.innerHTML = '🔊 Escuchar';
-                btn.style.background = 'rgba(0, 255, 204, 0.15)';
-                btn.style.borderColor = 'var(--neon-green)';
-                window.botonAudioActivo = null;
-            };
-            
+            lectura.onend = () => { btn.innerHTML = '🔊 Escuchar'; btn.style.background = 'rgba(0, 255, 204, 0.15)'; btn.style.borderColor = 'var(--neon-green)'; window.botonAudioActivo = null; };
             synth.speak(lectura);
         }
     </script>
