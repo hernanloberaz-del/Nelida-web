@@ -12,6 +12,7 @@
             --glass-border: rgba(0, 255, 204, 0.3);
             --text-main: #ffffff;
             --text-muted: #aaaaaa;
+            --error-red: #ff4d4d;
         }
 
         body {
@@ -96,6 +97,7 @@
             flex: 1.2;
             min-width: 350px;
             padding: 40px;
+            position: relative;
         }
 
         .payment-panel h2 {
@@ -140,9 +142,6 @@
             box-shadow: 0 0 10px rgba(142, 68, 173, 0.3);
         }
 
-        .btn-mp.active { border-color: #009ee3; background: rgba(0, 158, 227, 0.2); box-shadow: 0 0 10px rgba(0, 158, 227, 0.3); }
-        .btn-gpay.active { border-color: #ffffff; background: rgba(255, 255, 255, 0.1); box-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
-
         .form-group {
             margin-bottom: 20px;
         }
@@ -174,6 +173,11 @@
             border-color: var(--neon-green);
             box-shadow: 0 0 10px rgba(0,255,204,0.2);
         }
+        
+        .form-group input.input-error {
+            border-color: var(--error-red);
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
+        }
 
         .row {
             display: flex;
@@ -182,6 +186,15 @@
 
         .row .form-group {
             flex: 1;
+        }
+
+        .error-message {
+            color: var(--error-red);
+            font-size: 0.9em;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            display: none; /* Oculto por defecto */
         }
 
         .pay-btn {
@@ -195,7 +208,7 @@
             font-weight: bold;
             font-family: 'Orbitron', sans-serif;
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: 5px;
             transition: 0.3s;
             box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
         }
@@ -249,65 +262,172 @@
                 <button type="button" class="method-btn" onclick="seleccionarMetodo(this)">🅿️ PayPal</button>
             </div>
 
-            <form onsubmit="procesarPago(event)">
+            <form id="paymentForm" onsubmit="procesarPago(event)">
                 <div class="form-group">
                     <label>Nombre en la tarjeta / Titular</label>
-                    <input type="text" placeholder="Ej: Hernán Muñoz" required>
+                    <input type="text" id="nombreTitular" placeholder="Ej: Hernán Muñoz" required autocomplete="off">
                 </div>
                 
                 <div class="form-group">
-                    <label>Número de Tarjeta / Cuenta</label>
-                    <input type="text" placeholder="0000 0000 0000 0000" maxlength="19" required>
+                    <label>Número de Tarjeta</label>
+                    <input type="text" id="numTarjeta" placeholder="0000 0000 0000 0000" maxlength="19" required autocomplete="off">
                 </div>
 
                 <div class="row">
                     <div class="form-group">
                         <label>Vencimiento</label>
-                        <input type="text" placeholder="MM/AA" maxlength="5" required>
+                        <input type="text" id="vencimiento" placeholder="MM/AA" maxlength="5" required autocomplete="off">
                     </div>
                     <div class="form-group">
                         <label>CVC / CVV</label>
-                        <input type="password" placeholder="123" maxlength="4" required>
+                        <input type="password" id="cvc" placeholder="123" maxlength="4" required autocomplete="off">
                     </div>
                 </div>
+
+                <div id="mensajeError" class="error-message"></div>
 
                 <button type="submit" class="pay-btn">SUSCRIBIRSE AHORA</button>
             </form>
 
             <div class="secure-badge">
-                🔒 Pagos cifrados de extremo a extremo con seguridad bancaria de 256 bits.
+                🔒 Pagos cifrados de extremo a extremo con seguridad bancaria.
             </div>
         </div>
     </div>
 
     <script>
-        // Función para cambiar el estilo visual del método seleccionado
+        // --- 1. MÁSCARAS Y FORMATOS EN VIVO ---
+        
+        // Solo permite letras y espacios en el nombre
+        document.getElementById('nombreTitular').addEventListener('input', function() {
+            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        });
+
+        // Formatea la tarjeta a medida que escribe (bloquea letras y agrega espacios)
+        document.getElementById('numTarjeta').addEventListener('input', function() {
+            let valor = this.value.replace(/\D/g, ''); // Deja solo números
+            let formateado = '';
+            for (let i = 0; i < valor.length; i++) {
+                if (i > 0 && i % 4 === 0) formateado += ' ';
+                formateado += valor[i];
+            }
+            this.value = formateado;
+        });
+
+        // Formatea la fecha de vencimiento con la barra (MM/AA)
+        document.getElementById('vencimiento').addEventListener('input', function() {
+            let valor = this.value.replace(/\D/g, '');
+            if (valor.length >= 2) {
+                this.value = valor.slice(0,2) + '/' + valor.slice(2,4);
+            } else {
+                this.value = valor;
+            }
+        });
+
+        // Solo números en el CVC
+        document.getElementById('cvc').addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
+        });
+
+
+        // --- 2. VALIDACIÓN Y PROCESAMIENTO ---
+
         function seleccionarMetodo(botonSeleccionado) {
             const botones = document.querySelectorAll('.method-btn');
             botones.forEach(btn => btn.classList.remove('active'));
             botonSeleccionado.classList.add('active');
         }
 
-        // Función que simula el procesamiento y redirige
+        // Algoritmo de Luhn real para verificar si la tarjeta es matemáticamente válida
+        function validarLuhn(numero) {
+            let suma = 0;
+            let esPar = false;
+            for (let i = numero.length - 1; i >= 0; i--) {
+                let digito = parseInt(numero.charAt(i), 10);
+                if (esPar) {
+                    digito *= 2;
+                    if (digito > 9) digito -= 9;
+                }
+                suma += digito;
+                esPar = !esPar;
+            }
+            return (suma % 10) === 0;
+        }
+
+        function mostrarError(mensaje, idCampo) {
+            const errorDiv = document.getElementById('mensajeError');
+            errorDiv.innerText = mensaje;
+            errorDiv.style.display = 'block';
+            if (idCampo) {
+                document.getElementById(idCampo).classList.add('input-error');
+                document.getElementById(idCampo).focus();
+            }
+        }
+
+        function limpiarErrores() {
+            document.getElementById('mensajeError').style.display = 'none';
+            const inputs = document.querySelectorAll('.form-group input');
+            inputs.forEach(input => input.classList.remove('input-error'));
+        }
+
         function procesarPago(e) {
             e.preventDefault();
+            limpiarErrores();
             
+            // Validar Nombre
+            const nombre = document.getElementById('nombreTitular').value.trim();
+            if (nombre.length < 3) {
+                return mostrarError('Por favor, ingrese el nombre completo del titular.', 'nombreTitular');
+            }
+
+            // Validar Tarjeta
+            const tarjetaStr = document.getElementById('numTarjeta').value.replace(/\s/g, '');
+            if (tarjetaStr.length < 15 || tarjetaStr.length > 16) {
+                return mostrarError('El número de tarjeta está incompleto.', 'numTarjeta');
+            }
+            if (!validarLuhn(tarjetaStr)) {
+                return mostrarError('Número de tarjeta inválido o rechazado.', 'numTarjeta');
+            }
+
+            // Validar Vencimiento
+            const vencimiento = document.getElementById('vencimiento').value;
+            if (vencimiento.length !== 5) {
+                return mostrarError('Ingrese la fecha en formato MM/AA.', 'vencimiento');
+            }
+            
+            const mes = parseInt(vencimiento.split('/')[0]);
+            const anio = parseInt(vencimiento.split('/')[1]);
+            const fechaActual = new Date();
+            const mesActual = fechaActual.getMonth() + 1;
+            const anioActual = parseInt(fechaActual.getFullYear().toString().slice(-2)); // Ej: 26 para 2026
+
+            if (mes < 1 || mes > 12) {
+                return mostrarError('El mes debe ser entre 01 y 12.', 'vencimiento');
+            }
+            if (anio < anioActual || (anio === anioActual && mes < mesActual)) {
+                return mostrarError('La tarjeta se encuentra vencida.', 'vencimiento');
+            }
+
+            // Validar CVC
+            const cvc = document.getElementById('cvc').value;
+            if (cvc.length < 3) {
+                return mostrarError('El código de seguridad (CVC) está incompleto.', 'cvc');
+            }
+
+            // --- SI TODO ESTÁ CORRECTO, HACEMOS LA ANIMACIÓN ---
             const btn = document.querySelector('.pay-btn');
             
-            // 1. Cambiamos el botón para simular que está conectando con el banco
             btn.innerHTML = '⏳ PROCESANDO...';
-            btn.style.background = '#f39c12'; // Naranja de espera
+            btn.style.background = '#f39c12';
             btn.style.color = '#fff';
-            btn.disabled = true; // Desactivamos el botón para que no haga doble clic
+            btn.disabled = true; 
 
-            // 2. Simulamos una demora de 2.5 segundos de validación
             setTimeout(() => {
                 btn.innerHTML = '✅ PAGO APROBADO';
-                btn.style.background = '#27ae60'; // Verde de éxito
+                btn.style.background = '#27ae60'; 
                 
-                // 3. Después de 1 segundo más, lo mandamos de vuelta a Nélida
                 setTimeout(() => {
-                    // Le agregamos "?pago=ok" a la URL para que la otra página sepa que ya pagó
+                    // Retorno exitoso a la pantalla de chat
                     window.location.href = 'interaccion.html?pago=ok';
                 }, 1000);
                 
