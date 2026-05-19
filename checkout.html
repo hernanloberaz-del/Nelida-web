@@ -177,12 +177,11 @@
             letter-spacing: 1px;
         }
 
-        /* Colores específicos de cada pasarela */
+        /* Colores específicos de pasarelas */
         .btn-mp-link { background: #009EE3; box-shadow: 0 4px 15px rgba(0, 158, 227, 0.3); }
         .btn-mp-link:hover { background: #0088c4; transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0, 158, 227, 0.5); }
 
         .btn-stripe-link { background: #635bff; opacity: 0.5; cursor: not-allowed; }
-        .btn-paypal-link { background: #003087; opacity: 0.5; cursor: not-allowed; }
 
         .secure-badge {
             text-align: center;
@@ -222,26 +221,28 @@
             
             <div class="payment-methods">
                 <button type="button" class="method-btn active" onclick="mostrarMetodo('mp', this)">🤝 Mercado Pago</button>
-                <button type="button" class="method-btn" onclick="mostrarMetodo('tarjeta', this)">💳 Tarjeta (Stripe)</button>
                 <button type="button" class="method-btn" onclick="mostrarMetodo('paypal', this)">🅿️ PayPal</button>
-                <button type="button" class="method-btn" onclick="window.location.href='interaccion.html'">🔙 Volver al chat</button>
+                <button type="button" class="method-btn" onclick="mostrarMetodo('tarjeta', this)">💳 Tarjeta (Stripe)</button>
+                <button type="button" class="method-btn" onclick="window.location.href='interaccion.html'">🔙 Volver</button>
             </div>
 
             <div id="mp-box" class="pay-box active-box">
                 <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Serás redirigido a la plataforma segura de Mercado Pago. Podés adherir tu tarjeta de crédito o débito para activar tu suscripción.</p>
                 <a href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=498087b7b10645b79fb5b314ac870bd8" class="pay-btn btn-mp-link">Suscribirse con Mercado Pago</a>
-                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual seguro</p>
+                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual local</p>
+            </div>
+
+            <div id="paypal-box" class="pay-box">
+                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5; margin-bottom: 20px;">Pagá de forma rápida y segura desde cualquier parte del mundo utilizando tu saldo de PayPal o tarjetas internacionales.</p>
+                
+                <div id="paypal-button-container-P-1KW822034C763352DNIGHICQ"></div>
+                
+                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual internacional (USD)</p>
             </div>
 
             <div id="tarjeta-box" class="pay-box">
                 <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Pagos internacionales seguros procesados por Stripe. Ideal para clientes fuera de Argentina.</p>
                 <a href="#" class="pay-btn btn-stripe-link" onclick="event.preventDefault()">Configurar Stripe</a>
-                <p style="text-align: center; color: var(--error-red); font-size: 0.8em; margin-top: 15px;">⚠ Enlace de pago pendiente de configuración</p>
-            </div>
-
-            <div id="paypal-box" class="pay-box">
-                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Pagá de forma rápida y segura usando tu cuenta de PayPal o tus tarjetas asociadas en dólares.</p>
-                <a href="#" class="pay-btn btn-paypal-link" onclick="event.preventDefault()">Configurar PayPal</a>
                 <p style="text-align: center; color: var(--error-red); font-size: 0.8em; margin-top: 15px;">⚠ Enlace de pago pendiente de configuración</p>
             </div>
 
@@ -252,7 +253,7 @@
     </div>
 
     <script>
-        // Lógica súper simple para cambiar de pestaña
+        // Lógica para cambiar de pestaña
         function mostrarMetodo(metodo, botonSeleccionado) {
             const botones = document.querySelectorAll('.method-btn');
             botones.forEach(btn => btn.classList.remove('active'));
@@ -264,6 +265,27 @@
 
             document.getElementById(metodo + '-box').classList.add('active-box');
         }
+    </script>
+
+    <script src="https://www.paypal.com/sdk/js?client-id=BAAN4ARxixrtl7daE3GLRBgtiK7hMYdixmNIY4KHn3gJedt9O69N4MpRFuVL9HTXI0e0I4q9Q5qpYd0mRI&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+    <script>
+        paypal.Buttons({
+            style: {
+                shape: 'pill',
+                color: 'blue',
+                layout: 'vertical',
+                label: 'subscribe'
+            },
+            createSubscription: function(data, actions) {
+                return actions.subscription.create({
+                    plan_id: 'P-1KW822034C763352DNIGHICQ'
+                });
+            },
+            onApprove: function(data, actions) {
+                // REDIRECCIÓN MAESTRA: Al aprobarse la suscripción, se activa el modo PRO
+                window.location.href = 'interaccion.html?pago=ok';
+            }
+        }).render('#paypal-button-container-P-1KW822034C763352DNIGHICQ');
     </script>
 </body>
 </html>
