@@ -48,6 +48,9 @@
             background: linear-gradient(135deg, rgba(142,68,173,0.2) 0%, rgba(0,0,0,0) 100%);
             padding: 40px;
             border-right: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .summary-panel h1 {
@@ -61,7 +64,7 @@
         .price-tag {
             font-size: 3em;
             font-weight: bold;
-            margin: 20px 0;
+            margin: 15px 0;
             color: #fff;
         }
 
@@ -74,11 +77,12 @@
         .benefits-list {
             list-style: none;
             padding: 0;
-            margin-top: 30px;
+            margin-top: 20px;
+            margin-bottom: 30px;
         }
 
         .benefits-list li {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             font-size: 1.05em;
@@ -90,6 +94,12 @@
             font-weight: bold;
             margin-right: 10px;
             font-size: 1.2em;
+        }
+
+        .free-trial-banner {
+            border-top: 1px dashed rgba(0, 255, 204, 0.3);
+            padding-top: 20px;
+            margin-top: auto;
         }
 
         /* PANEL DERECHO - FORMULARIO DE PAGO */
@@ -177,7 +187,6 @@
             letter-spacing: 1px;
         }
 
-        /* Colores específicos de pasarelas */
         .btn-mp-link { background: #009EE3; box-shadow: 0 4px 15px rgba(0, 158, 227, 0.3); }
         .btn-mp-link:hover { background: #0088c4; transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0, 158, 227, 0.5); }
 
@@ -199,21 +208,28 @@
 
     <div class="checkout-container">
         <div class="summary-panel">
-            <h1>NÉLIDA PRO</h1>
-            <p style="color: var(--text-muted); line-height: 1.5;">Desbloqueá el potencial completo de tu asistente de IA especializado.</p>
-            
-            <div class="price-tag">
-                $14.99 <span>USD / mes</span>
+            <div>
+                <h1>NÉLIDA PRO</h1>
+                <p style="color: var(--text-muted); line-height: 1.5; margin-bottom: 5px;">Desbloqueá el potencial completo de tu asistente de IA especializado.</p>
+                
+                <div class="price-tag">
+                    $14.99 <span>USD / mes</span>
+                </div>
+
+                <ul class="benefits-list">
+                    <li>Mensajes ilimitados 24/7</li>
+                    <li>Generación de reportes PDF</li>
+                    <li>Creación de planillas Excel</li>
+                    <li>Presentaciones PowerPoint (PPT)</li>
+                    <li>Memoria de contexto extendida</li>
+                    <li>Soporte prioritario</li>
+                </ul>
             </div>
 
-            <ul class="benefits-list">
-                <li>Mensajes ilimitados 24/7</li>
-                <li>Generación de reportes PDF</li>
-                <li>Creación de planillas Excel</li>
-                <li>Presentaciones PowerPoint (PPT)</li>
-                <li>Memoria de contexto extendida</li>
-                <li>Soporte prioritario</li>
-            </ul>
+            <div class="free-trial-banner">
+                <p style="margin: 0; color: var(--neon-green); font-family: 'Orbitron', sans-serif; font-size: 0.9em; font-weight: bold;">¿Querés probar primero?</p>
+                <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85em;">Obtené 10 créditos de prueba sin compromiso.</p>
+            </div>
         </div>
 
         <div class="payment-panel">
@@ -223,7 +239,7 @@
                 <button type="button" class="method-btn active" onclick="mostrarMetodo('mp', this)">🤝 Mercado Pago</button>
                 <button type="button" class="method-btn" onclick="mostrarMetodo('paypal', this)">🅿️ PayPal</button>
                 <button type="button" class="method-btn" onclick="mostrarMetodo('tarjeta', this)">💳 Tarjeta (Stripe)</button>
-                <button type="button" class="method-btn" onclick="window.location.href='interaccion.html'">🔙 Volver</button>
+                <button type="button" class="method-btn" onclick="window.location.href='interaccion.html'" style="border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 8px rgba(0, 255, 204, 0.2);">🎁 Plan Gratis (10 Msjs)</button>
             </div>
 
             <div id="mp-box" class="pay-box active-box">
@@ -234,9 +250,7 @@
 
             <div id="paypal-box" class="pay-box">
                 <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5; margin-bottom: 20px;">Pagá de forma rápida y segura desde cualquier parte del mundo utilizando tu saldo de PayPal o tarjetas internacionales.</p>
-                
                 <div id="paypal-button-container-P-1KW822034C763352DNIGHICQ"></div>
-                
                 <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual internacional (USD)</p>
             </div>
 
@@ -253,7 +267,6 @@
     </div>
 
     <script>
-        // Lógica para cambiar de pestaña
         function mostrarMetodo(metodo, botonSeleccionado) {
             const botones = document.querySelectorAll('.method-btn');
             botones.forEach(btn => btn.classList.remove('active'));
@@ -282,7 +295,6 @@
                 });
             },
             onApprove: function(data, actions) {
-                // REDIRECCIÓN MAESTRA: Al aprobarse la suscripción, se activa el modo PRO
                 window.location.href = 'interaccion.html?pago=ok';
             }
         }).render('#paypal-button-container-P-1KW822034C763352DNIGHICQ');
