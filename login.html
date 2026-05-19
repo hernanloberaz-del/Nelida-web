@@ -7,7 +7,6 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        // Agregado OAuthProvider para darle soporte nativo al botón de Apple
         import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
@@ -26,7 +25,7 @@
         
         const googleProvider = new GoogleAuthProvider();
         const facebookProvider = new FacebookAuthProvider();
-        const appleProvider = new OAuthProvider('apple.com'); // Instanciado el proveedor de Apple
+        const appleProvider = new OAuthProvider('apple.com');
 
         const guardarUsuario = async (user) => {
             try {
@@ -50,7 +49,7 @@
             try {
                 const result = await signInWithPopup(auth, googleProvider);
                 await guardarUsuario(result.user);
-                window.location.href = "checkout.html"; // Redirige al Checkout estratégico
+                window.location.href = "checkout.html"; 
             } catch (e) { alert("Error Google: " + e.message); }
         };
 
@@ -58,38 +57,66 @@
             try {
                 const result = await signInWithPopup(auth, facebookProvider);
                 await guardarUsuario(result.user);
-                window.location.href = "checkout.html"; // Redirige al Checkout estratégico
+                window.location.href = "checkout.html"; 
             } catch (e) {
                 console.error(e);
                 alert("Error Facebook: " + e.message);
             }
         };
 
-        // Activada la función oficial para el inicio de sesión con Apple
         window.loginConApple = async () => {
             try {
                 const result = await signInWithPopup(auth, appleProvider);
                 await guardarUsuario(result.user);
-                window.location.href = "checkout.html"; // Redirige al Checkout estratégico
+                window.location.href = "checkout.html"; 
             } catch (e) { alert("Error Apple: " + e.message); }
         };
 
+        // MOTOR DE AUTENTICACIÓN CON EMAIL TOTALMENTE BLINDADO
         window.authEmail = async () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            if(!email || !pass) return alert("Por favor, completa los campos.");
+            const emailInput = document.getElementById('email').value.trim();
+            const passInput = document.getElementById('pass').value;
+            
+            // 1. Validar campos vacíos
+            if(!emailInput || !passInput) {
+                return alert("⚠️ Por favor, completa tanto el correo electrónico como la contraseña.");
+            }
+            
+            // 2. Validar formato de Email real (Evita que pongan un nombre común)
+            const expresionRegularEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!expresionRegularEmail.test(emailInput)) {
+                return alert("⚠️ Formato de correo inválido. Asegúrate de ingresar una dirección válida con '@' y un dominio (Ej: nombre@correo.com). No ingreses un nombre de usuario normal.");
+            }
+
+            // 3. Validar mínimos exigidos por Firebase
+            if (passInput.length < 6) {
+                return alert("⚠️ Seguridad de contraseña: La contraseña debe tener como mínimo 6 caracteres.");
+            }
+
             try {
-                const result = await signInWithEmailAndPassword(auth, email, pass);
+                // Primero intentamos iniciar sesión por defecto
+                const result = await signInWithEmailAndPassword(auth, emailInput, passInput);
                 await guardarUsuario(result.user);
-                window.location.href = "checkout.html"; // Redirige al Checkout estratégico al loguearse
+                window.location.href = "checkout.html"; 
             } catch (e) {
-                if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-email') {
+                // Si Firebase detecta credenciales inválidas, puede significar que es un usuario nuevo
+                if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found') {
                     try {
-                        const result = await createUserWithEmailAndPassword(auth, email, pass);
+                        // Intentamos registrarlo automáticamente como cliente nuevo
+                        const result = await createUserWithEmailAndPassword(auth, emailInput, passInput);
                         await guardarUsuario(result.user);
-                        window.location.href = "checkout.html"; // Redirige al Checkout estratégico al registrarse
-                    } catch (regError) { alert("Error al registrar: " + regError.message); }
-                } else { alert("Error: " + e.message); }
+                        window.location.href = "checkout.html"; 
+                    } catch (regError) {
+                        // Si falla porque el mail ya existía, significa que erró la contraseña en el login previo
+                        if (regError.code === 'auth/email-already-in-use') {
+                            alert("❌ La contraseña ingresada es incorrecta para este correo electrónico registrado.");
+                        } else {
+                            alert("❌ Error en el registro: " + regError.message);
+                        }
+                    }
+                } else {
+                    alert("❌ Error del sistema: " + e.message);
+                }
             }
         };
     </script>
@@ -105,8 +132,8 @@
         .btn-facebook { background: #1877F2; color: white; border: none; }
         .btn-apple { background: #000; color: white; border: none; }
         .form-auth { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; }
-        input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: rgba(255,255,255,0.95); font-size: 13px; }
-        .btn-entrar { background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; }
+        input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: rgba(255,255,255,0.95); font-size: 13px; color: #000; }
+        .btn-entrar { background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -126,9 +153,9 @@
                 Continuar con Apple
             </button>
             <div class="form-auth">
-                <input type="email" id="email" placeholder="Correo electrónico">
-                <input type="password" id="pass" placeholder="Contraseña">
-                <button class="btn-entrar" onclick="window.authEmail()">ENTRAR / REGISTRARSE</button>
+                <input type="text" id="email" placeholder="Correo electrónico (ejemplo@mail.com)">
+                <input type="password" id="pass" placeholder="Contraseña (mínimo 6 letras/números)">
+                <button class="btn-entrar" onclick="window.authEmail()">Entrar / Registrarse</button>
             </div>
         </div>
     </div>
