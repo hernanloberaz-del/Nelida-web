@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nélida AI - Login</title>
+    <title>Nélida AI - Iniciar Sesión</title>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -27,28 +27,18 @@
         const facebookProvider = new FacebookAuthProvider();
         const appleProvider = new OAuthProvider('apple.com');
 
-        const guardarUsuario = async (user) => {
+        const actualizarUltimoLogin = async (user) => {
             try {
-                const paisDetectado = navigator.language || "es-AR";
                 await setDoc(doc(db, "usuarios", user.uid), {
-                    nombre: user.displayName || "Usuario Nuevo",
-                    email: user.email,
-                    foto: user.photoURL || "",
-                    pais: paisDetectado,
-                    edad: 0,
-                    version_seleccionada: "Pendiente",
                     ultimoLogin: new Date()
                 }, { merge: true });
-                console.log("Perfil actualizado.");
-            } catch (error) {
-                console.error("Error al guardar:", error);
-            }
+            } catch (error) { console.error("Error base de datos:", error); }
         };
 
         window.loginConGoogle = async () => {
             try {
                 const result = await signInWithPopup(auth, googleProvider);
-                await guardarUsuario(result.user);
+                await actualizarUltimoLogin(result.user);
                 window.location.href = "checkout.html"; 
             } catch (e) { alert("Error Google: " + e.message); }
         };
@@ -56,67 +46,32 @@
         window.loginConFacebook = async () => {
             try {
                 const result = await signInWithPopup(auth, facebookProvider);
-                await guardarUsuario(result.user);
+                await actualizarUltimoLogin(result.user);
                 window.location.href = "checkout.html"; 
-            } catch (e) {
-                console.error(e);
-                alert("Error Facebook: " + e.message);
-            }
+            } catch (e) { alert("Error Facebook: " + e.message); }
         };
 
         window.loginConApple = async () => {
             try {
                 const result = await signInWithPopup(auth, appleProvider);
-                await guardarUsuario(result.user);
+                await actualizarUltimoLogin(result.user);
                 window.location.href = "checkout.html"; 
             } catch (e) { alert("Error Apple: " + e.message); }
         };
 
-        // MOTOR DE AUTENTICACIÓN CON EMAIL TOTALMENTE BLINDADO
+        // EXCLUSIVO LOGIN: Ya no intenta registrar si falla
         window.authEmail = async () => {
-            const emailInput = document.getElementById('email').value.trim();
-            const passInput = document.getElementById('pass').value;
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('pass').value;
             
-            // 1. Validar campos vacíos
-            if(!emailInput || !passInput) {
-                return alert("⚠️ Por favor, completa tanto el correo electrónico como la contraseña.");
-            }
+            if(!email || !pass) return alert("Por favor, completa los campos.");
             
-            // 2. Validar formato de Email real (Evita que pongan un nombre común)
-            const expresionRegularEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!expresionRegularEmail.test(emailInput)) {
-                return alert("⚠️ Formato de correo inválido. Asegúrate de ingresar una dirección válida con '@' y un dominio (Ej: nombre@correo.com). No ingreses un nombre de usuario normal.");
-            }
-
-            // 3. Validar mínimos exigidos por Firebase
-            if (passInput.length < 6) {
-                return alert("⚠️ Seguridad de contraseña: La contraseña debe tener como mínimo 6 caracteres.");
-            }
-
             try {
-                // Primero intentamos iniciar sesión por defecto
-                const result = await signInWithEmailAndPassword(auth, emailInput, passInput);
-                await guardarUsuario(result.user);
+                const result = await signInWithEmailAndPassword(auth, email, pass);
+                await actualizarUltimoLogin(result.user);
                 window.location.href = "checkout.html"; 
             } catch (e) {
-                // Si Firebase detecta credenciales inválidas, puede significar que es un usuario nuevo
-                if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found') {
-                    try {
-                        // Intentamos registrarlo automáticamente como cliente nuevo
-                        const result = await createUserWithEmailAndPassword(auth, emailInput, passInput);
-                        await guardarUsuario(result.user);
-                        window.location.href = "checkout.html"; 
-                    } catch (regError) {
-                        // Si falla porque el mail ya existía, significa que erró la contraseña en el login previo
-                        if (regError.code === 'auth/email-already-in-use') {
-                            alert("❌ La contraseña ingresada es incorrecta para este correo electrónico registrado.");
-                        } else {
-                            alert("❌ Error en el registro: " + regError.message);
-                        }
-                    }
-                } else {
-                    alert("❌ Error del sistema: " + e.message);
-                }
+                alert("❌ Correo o contraseña incorrectos. Si no tenés cuenta, tocá el botón de registrarse abajo.");
             }
         };
     </script>
@@ -134,6 +89,8 @@
         .form-auth { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; }
         input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: rgba(255,255,255,0.95); font-size: 13px; color: #000; }
         .btn-entrar { background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; }
+        .btn-ir-registro { background: transparent; color: #00ffcc; border: 1px dashed #00ffcc; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-transform: uppercase; text-align: center; text-decoration: none; margin-top: 5px; }
+        .btn-ir-registro:hover { background: rgba(0, 255, 204, 0.1); }
     </style>
 </head>
 <body>
@@ -153,9 +110,11 @@
                 Continuar con Apple
             </button>
             <div class="form-auth">
-                <input type="text" id="email" placeholder="Correo electrónico (ejemplo@mail.com)">
-                <input type="password" id="pass" placeholder="Contraseña (mínimo 6 letras/números)">
-                <button class="btn-entrar" onclick="window.authEmail()">Entrar / Registrarse</button>
+                <input type="email" id="email" placeholder="Tu correo electrónico">
+                <input type="password" id="pass" placeholder="Tu contraseña">
+                <button class="btn-entrar" onclick="window.authEmail()">Ingresar</button>
+                
+                <a href="registro.html" class="btn-ir-registro">¿No tenés cuenta? Registrate acá</a>
             </div>
         </div>
     </div>
