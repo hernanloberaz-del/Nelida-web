@@ -12,7 +12,6 @@
             --glass-border: rgba(0, 255, 204, 0.3);
             --text-main: #ffffff;
             --text-muted: #aaaaaa;
-            --error-red: #ff4d4d;
         }
 
         body {
@@ -113,7 +112,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-bottom: 25px;
+            margin-bottom: 30px;
         }
 
         .method-btn {
@@ -142,87 +141,52 @@
             box-shadow: 0 0 10px rgba(142, 68, 173, 0.3);
         }
 
-        .form-group {
-            margin-bottom: 20px;
+        /* CAJAS DE PAGO DINÁMICAS */
+        .pay-box {
+            display: none;
+            animation: fadeIn 0.4s ease;
         }
 
-        .form-group label {
+        .pay-box.active-box {
             display: block;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-family: 'Orbitron', sans-serif;
         }
 
-        .form-group input {
-            width: 100%;
-            box-sizing: border-box;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid var(--glass-border);
-            color: #fff;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 1em;
-            outline: none;
-            transition: 0.3s;
-        }
-
-        .form-group input:focus {
-            border-color: var(--neon-green);
-            box-shadow: 0 0 10px rgba(0,255,204,0.2);
-        }
-        
-        .form-group input.input-error {
-            border-color: var(--error-red);
-            box-shadow: 0 0 10px rgba(255, 77, 77, 0.2);
-        }
-
-        .row {
-            display: flex;
-            gap: 15px;
-        }
-
-        .row .form-group {
-            flex: 1;
-        }
-
-        .error-message {
-            color: var(--error-red);
-            font-size: 0.9em;
-            text-align: center;
-            margin-bottom: 10px;
-            font-weight: bold;
-            display: none; /* Oculto por defecto */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .pay-btn {
+            display: block;
             width: 100%;
-            background: var(--neon-green);
-            color: #000;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+            color: #fff;
             border: none;
-            padding: 16px;
+            padding: 18px;
             border-radius: 8px;
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: bold;
             font-family: 'Orbitron', sans-serif;
             cursor: pointer;
-            margin-top: 5px;
+            margin-top: 15px;
             transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(0, 255, 204, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .pay-btn:hover {
-            background: #fff;
-            box-shadow: 0 4px 20px rgba(255, 255, 255, 0.4);
-            transform: translateY(-2px);
-        }
+        /* Colores específicos de cada pasarela */
+        .btn-mp-link { background: #009EE3; box-shadow: 0 4px 15px rgba(0, 158, 227, 0.3); }
+        .btn-mp-link:hover { background: #0088c4; transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0, 158, 227, 0.5); }
+
+        .btn-stripe-link { background: #635bff; opacity: 0.5; cursor: not-allowed; }
+        .btn-paypal-link { background: #003087; opacity: 0.5; cursor: not-allowed; }
 
         .secure-badge {
             text-align: center;
-            margin-top: 20px;
-            font-size: 0.8em;
+            margin-top: 35px;
+            font-size: 0.85em;
             color: var(--text-muted);
             display: flex;
             justify-content: center;
@@ -236,7 +200,7 @@
     <div class="checkout-container">
         <div class="summary-panel">
             <h1>NÉLIDA PRO</h1>
-            <p style="color: var(--text-muted); line-height: 1.5;">Desbloquea el potencial completo de tu asistente de IA especializado.</p>
+            <p style="color: var(--text-muted); line-height: 1.5;">Desbloqueá el potencial completo de tu asistente de IA especializado.</p>
             
             <div class="price-tag">
                 $14.99 <span>USD / mes</span>
@@ -253,41 +217,32 @@
         </div>
 
         <div class="payment-panel">
-            <h2>Detalles de Pago</h2>
+            <h2>Elegí tu método de pago</h2>
             
             <div class="payment-methods">
-                <button type="button" class="method-btn active" onclick="seleccionarMetodo(this)">💳 Tarjeta</button>
-                <button type="button" class="method-btn btn-mp" onclick="seleccionarMetodo(this)">🤝 Mercado Pago</button>
-                <button type="button" class="method-btn btn-gpay" onclick="seleccionarMetodo(this)">📱 Google Pay</button>
-                <button type="button" class="method-btn" onclick="seleccionarMetodo(this)">🅿️ PayPal</button>
+                <button type="button" class="method-btn active" onclick="mostrarMetodo('mp', this)">🤝 Mercado Pago</button>
+                <button type="button" class="method-btn" onclick="mostrarMetodo('tarjeta', this)">💳 Tarjeta (Stripe)</button>
+                <button type="button" class="method-btn" onclick="mostrarMetodo('paypal', this)">🅿️ PayPal</button>
+                <button type="button" class="method-btn" onclick="window.location.href='interaccion.html'">🔙 Volver al chat</button>
             </div>
 
-            <form id="paymentForm" onsubmit="procesarPago(event)">
-                <div class="form-group">
-                    <label>Nombre en la tarjeta / Titular</label>
-                    <input type="text" id="nombreTitular" placeholder="Ej: Hernán Muñoz" required autocomplete="off">
-                </div>
-                
-                <div class="form-group">
-                    <label>Número de Tarjeta</label>
-                    <input type="text" id="numTarjeta" placeholder="0000 0000 0000 0000" maxlength="19" required autocomplete="off">
-                </div>
+            <div id="mp-box" class="pay-box active-box">
+                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Serás redirigido a la plataforma segura de Mercado Pago. Podés usar saldo en cuenta, tarjetas de crédito, débito o efectivo.</p>
+                <a href="https://mpago.la/2hQssPX" class="pay-btn btn-mp-link">Pagar con Mercado Pago</a>
+                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Acreditación inmediata</p>
+            </div>
 
-                <div class="row">
-                    <div class="form-group">
-                        <label>Vencimiento</label>
-                        <input type="text" id="vencimiento" placeholder="MM/AA" maxlength="5" required autocomplete="off">
-                    </div>
-                    <div class="form-group">
-                        <label>CVC / CVV</label>
-                        <input type="password" id="cvc" placeholder="123" maxlength="4" required autocomplete="off">
-                    </div>
-                </div>
+            <div id="tarjeta-box" class="pay-box">
+                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Pagos internacionales seguros procesados por Stripe. Ideal para clientes fuera de Argentina.</p>
+                <a href="#" class="pay-btn btn-stripe-link" onclick="event.preventDefault()">Configurar Stripe</a>
+                <p style="text-align: center; color: var(--error-red); font-size: 0.8em; margin-top: 15px;">⚠ Enlace de pago pendiente de configuración</p>
+            </div>
 
-                <div id="mensajeError" class="error-message"></div>
-
-                <button type="submit" class="pay-btn">SUSCRIBIRSE AHORA</button>
-            </form>
+            <div id="paypal-box" class="pay-box">
+                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Pagá de forma rápida y segura usando tu cuenta de PayPal o tus tarjetas asociadas en dólares.</p>
+                <a href="#" class="pay-btn btn-paypal-link" onclick="event.preventDefault()">Configurar PayPal</a>
+                <p style="text-align: center; color: var(--error-red); font-size: 0.8em; margin-top: 15px;">⚠ Enlace de pago pendiente de configuración</p>
+            </div>
 
             <div class="secure-badge">
                 🔒 Pagos cifrados de extremo a extremo con seguridad bancaria.
@@ -296,142 +251,21 @@
     </div>
 
     <script>
-        // --- 1. MÁSCARAS Y FORMATOS EN VIVO ---
-        
-        // Solo permite letras y espacios en el nombre
-        document.getElementById('nombreTitular').addEventListener('input', function() {
-            this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
-        });
-
-        // Formatea la tarjeta a medida que escribe (bloquea letras y agrega espacios)
-        document.getElementById('numTarjeta').addEventListener('input', function() {
-            let valor = this.value.replace(/\D/g, ''); // Deja solo números
-            let formateado = '';
-            for (let i = 0; i < valor.length; i++) {
-                if (i > 0 && i % 4 === 0) formateado += ' ';
-                formateado += valor[i];
-            }
-            this.value = formateado;
-        });
-
-        // Formatea la fecha de vencimiento con la barra (MM/AA)
-        document.getElementById('vencimiento').addEventListener('input', function() {
-            let valor = this.value.replace(/\D/g, '');
-            if (valor.length >= 2) {
-                this.value = valor.slice(0,2) + '/' + valor.slice(2,4);
-            } else {
-                this.value = valor;
-            }
-        });
-
-        // Solo números en el CVC
-        document.getElementById('cvc').addEventListener('input', function() {
-            this.value = this.value.replace(/\D/g, '');
-        });
-
-
-        // --- 2. VALIDACIÓN Y PROCESAMIENTO ---
-
-        function seleccionarMetodo(botonSeleccionado) {
+        // Lógica súper simple para cambiar de pestaña
+        function mostrarMetodo(metodo, botonSeleccionado) {
+            // 1. Apagar todos los botones
             const botones = document.querySelectorAll('.method-btn');
             botones.forEach(btn => btn.classList.remove('active'));
+            
+            // 2. Encender el botón clickeado
             botonSeleccionado.classList.add('active');
-        }
 
-        // Algoritmo de Luhn real para verificar si la tarjeta es matemáticamente válida
-        function validarLuhn(numero) {
-            let suma = 0;
-            let esPar = false;
-            for (let i = numero.length - 1; i >= 0; i--) {
-                let digito = parseInt(numero.charAt(i), 10);
-                if (esPar) {
-                    digito *= 2;
-                    if (digito > 9) digito -= 9;
-                }
-                suma += digito;
-                esPar = !esPar;
-            }
-            return (suma % 10) === 0;
-        }
+            // 3. Ocultar todas las cajas de pago
+            const cajas = document.querySelectorAll('.pay-box');
+            cajas.forEach(caja => caja.classList.remove('active-box'));
 
-        function mostrarError(mensaje, idCampo) {
-            const errorDiv = document.getElementById('mensajeError');
-            errorDiv.innerText = mensaje;
-            errorDiv.style.display = 'block';
-            if (idCampo) {
-                document.getElementById(idCampo).classList.add('input-error');
-                document.getElementById(idCampo).focus();
-            }
-        }
-
-        function limpiarErrores() {
-            document.getElementById('mensajeError').style.display = 'none';
-            const inputs = document.querySelectorAll('.form-group input');
-            inputs.forEach(input => input.classList.remove('input-error'));
-        }
-
-        function procesarPago(e) {
-            e.preventDefault();
-            limpiarErrores();
-            
-            // Validar Nombre
-            const nombre = document.getElementById('nombreTitular').value.trim();
-            if (nombre.length < 3) {
-                return mostrarError('Por favor, ingrese el nombre completo del titular.', 'nombreTitular');
-            }
-
-            // Validar Tarjeta
-            const tarjetaStr = document.getElementById('numTarjeta').value.replace(/\s/g, '');
-            if (tarjetaStr.length < 15 || tarjetaStr.length > 16) {
-                return mostrarError('El número de tarjeta está incompleto.', 'numTarjeta');
-            }
-            if (!validarLuhn(tarjetaStr)) {
-                return mostrarError('Número de tarjeta inválido o rechazado.', 'numTarjeta');
-            }
-
-            // Validar Vencimiento
-            const vencimiento = document.getElementById('vencimiento').value;
-            if (vencimiento.length !== 5) {
-                return mostrarError('Ingrese la fecha en formato MM/AA.', 'vencimiento');
-            }
-            
-            const mes = parseInt(vencimiento.split('/')[0]);
-            const anio = parseInt(vencimiento.split('/')[1]);
-            const fechaActual = new Date();
-            const mesActual = fechaActual.getMonth() + 1;
-            const anioActual = parseInt(fechaActual.getFullYear().toString().slice(-2)); // Ej: 26 para 2026
-
-            if (mes < 1 || mes > 12) {
-                return mostrarError('El mes debe ser entre 01 y 12.', 'vencimiento');
-            }
-            if (anio < anioActual || (anio === anioActual && mes < mesActual)) {
-                return mostrarError('La tarjeta se encuentra vencida.', 'vencimiento');
-            }
-
-            // Validar CVC
-            const cvc = document.getElementById('cvc').value;
-            if (cvc.length < 3) {
-                return mostrarError('El código de seguridad (CVC) está incompleto.', 'cvc');
-            }
-
-            // --- SI TODO ESTÁ CORRECTO, HACEMOS LA ANIMACIÓN ---
-            const btn = document.querySelector('.pay-btn');
-            
-            btn.innerHTML = '⏳ PROCESANDO...';
-            btn.style.background = '#f39c12';
-            btn.style.color = '#fff';
-            btn.disabled = true; 
-
-            setTimeout(() => {
-                btn.innerHTML = '✅ PAGO APROBADO';
-                btn.style.background = '#27ae60'; 
-                
-                setTimeout(() => {
-                    // Retorno exitoso a la pantalla de chat
-                    window.location.href = 'interaccion.html?pago=ok';
-                }, 1000);
-                
-            }, 2500);
+            // 4. Mostrar la caja correcta
+            document.getElementById(metodo + '-box').classList.add('active-box');
         }
     </script>
 </body>
