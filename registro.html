@@ -28,7 +28,6 @@
             const email = document.getElementById('reg-email').value.trim();
             const pass = document.getElementById('reg-pass').value;
             
-            // Validaciones locales antes de enviar
             if(!nombre || !email || !pass) {
                 return alert("⚠️ Por favor, completá todos los casilleros.");
             }
@@ -41,13 +40,13 @@
             }
 
             try {
-                // 1. Crear usuario en Firebase Authentication
+                // 1. Crea el usuario de verdad únicamente acá
                 const result = await createUserWithEmailAndPassword(auth, email, pass);
                 
-                // 2. Guardar sus datos REALES en Firestore Database
+                // 2. Guarda el perfil en Firestore
                 const paisDetectado = navigator.language || "es-AR";
                 await setDoc(doc(db, "usuarios", result.user.uid), {
-                    nombre: nombre, // Guardamos el nombre real ingresado
+                    nombre: nombre, 
                     email: email,
                     foto: "",
                     pais: paisDetectado,
@@ -56,14 +55,13 @@
                     ultimoLogin: new Date()
                 }, { merge: true });
 
-                console.log("Usuario registrado con éxito en DB.");
-                
-                // 3. Redirección directa al Checkout estratégico de pagos
+                console.log("Perfil guardado con éxito.");
+                // 3. Al checkout directo a pagar o elegir la prueba
                 window.location.href = "checkout.html";
                 
             } catch (error) {
                 if (error.code === 'auth/email-already-in-use') {
-                    alert("❌ Este correo electrónico ya se encuentra registrado. Probá iniciando sesión.");
+                    alert("❌ Este correo electrónico ya existe. Si es tuyo, volvé atrás e iniciá sesión.");
                 } else {
                     alert("❌ Error al registrar cuenta: " + error.message);
                 }
