@@ -12,6 +12,7 @@
             --glass-border: rgba(0, 255, 204, 0.3);
             --text-main: #ffffff;
             --text-muted: #aaaaaa;
+            --error-red: #ff4d4d;
         }
 
         body {
@@ -227,9 +228,9 @@
             </div>
 
             <div id="mp-box" class="pay-box active-box">
-                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Serás redirigido a la plataforma segura de Mercado Pago. Podés usar saldo en cuenta, tarjetas de crédito, débito o efectivo.</p>
-                <a href="https://mpago.la/2hQssPX" class="pay-btn btn-mp-link">Pagar con Mercado Pago</a>
-                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Acreditación inmediata</p>
+                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Serás redirigido a la plataforma segura de Mercado Pago. Podés adherir tu tarjeta de crédito o débito para activar tu suscripción.</p>
+                <a href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=498087b7b10645b79fb5b314ac870bd8" class="pay-btn btn-mp-link">Suscribirse con Mercado Pago</a>
+                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual seguro</p>
             </div>
 
             <div id="tarjeta-box" class="pay-box">
@@ -253,18 +254,14 @@
     <script>
         // Lógica súper simple para cambiar de pestaña
         function mostrarMetodo(metodo, botonSeleccionado) {
-            // 1. Apagar todos los botones
             const botones = document.querySelectorAll('.method-btn');
             botones.forEach(btn => btn.classList.remove('active'));
             
-            // 2. Encender el botón clickeado
             botonSeleccionado.classList.add('active');
 
-            // 3. Ocultar todas las cajas de pago
             const cajas = document.querySelectorAll('.pay-box');
             cajas.forEach(caja => caja.classList.remove('active-box'));
 
-            // 4. Mostrar la caja correcta
             document.getElementById(metodo + '-box').classList.add('active-box');
         }
     </script>
