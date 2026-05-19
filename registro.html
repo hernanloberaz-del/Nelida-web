@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nélida AI - Crear Cuenta</title>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
+            authDomain: "nelida-e89d3.firebaseapp.com",
+            projectId: "nelida-e89d3",
+            storageBucket: "nelida-e89d3.firebasestorage.app",
+            messagingSenderId: "135147571928",
+            appId: "1:135147571928:web:347838ce007dac458225ad"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.crearCuentaEmail = async () => {
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const pass = document.getElementById('reg-pass').value;
+            
+            // Validaciones locales antes de enviar
+            if(!nombre || !email || !pass) {
+                return alert("⚠️ Por favor, completá todos los casilleros.");
+            }
+            if(pass.length < 6) {
+                return alert("⚠️ La contraseña debe tener al menos 6 caracteres por seguridad.");
+            }
+            const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!regexEmail.test(email)) {
+                return alert("⚠️ El formato del correo electrónico no es válido.");
+            }
+
+            try {
+                // 1. Crear usuario en Firebase Authentication
+                const result = await createUserWithEmailAndPassword(auth, email, pass);
+                
+                // 2. Guardar sus datos REALES en Firestore Database
+                const paisDetectado = navigator.language || "es-AR";
+                await setDoc(doc(db, "usuarios", result.user.uid), {
+                    nombre: nombre, // Guardamos el nombre real ingresado
+                    email: email,
+                    foto: "",
+                    pais: paisDetectado,
+                    edad: 0,
+                    version_seleccionada: "Pendiente",
+                    ultimoLogin: new Date()
+                }, { merge: true });
+
+                console.log("Usuario registrado con éxito en DB.");
+                
+                // 3. Redirección directa al Checkout estratégico de pagos
+                window.location.href = "checkout.html";
+                
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    alert("❌ Este correo electrónico ya se encuentra registrado. Probá iniciando sesión.");
+                } else {
+                    alert("❌ Error al registrar cuenta: " + error.message);
+                }
+            }
+        };
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
+        .contenedor { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .img-fondo { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: 1; filter: brightness(0.6); }
+        .caja-registro { position: relative; width: 340px; z-index: 10; display: flex; flex-direction: column; gap: 15px; background: rgba(0, 0, 0, 0.75); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(0, 255, 204, 0.2); box-shadow: 0 0 25px rgba(0, 255, 204, 0.15); }
+        h2 { color: #fff; font-family: 'Segoe UI', sans-serif; font-size: 1.4em; text-align: center; letter-spacing: 1px; margin-bottom: 5px; }
+        h2 span { color: #00ffcc; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        label { color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        input { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.3); background: rgba(0,0,0,0.6); font-size: 13px; color: #fff; outline: none; }
+        input:focus { border-color: #8e44ad; box-shadow: 0 0 8px rgba(142, 68, 173, 0.4); }
+        .btn-registrar { background: #8e44ad; color: white; border: none; padding: 13px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3); transition: 0.3s; }
+        .btn-registrar:hover { background: #9b59b6; transform: translateY(-1px); }
+        .btn-volver { background: transparent; color: #aaa; border: none; font-size: 12px; cursor: pointer; text-align: center; text-decoration: underline; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <img src="versiones_nelida/sexologa.png" class="img-fondo">
+        
+        <div class="caja-registro">
+            <h2>Crear cuenta en <span>Nélida</span></h2>
+            
+            <div class="form-group">
+                <label>Nombre y Apellido</label>
+                <input type="text" id="reg-nombre" placeholder="Ej: Hernán Muñoz" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label>Correo electrónico</label>
+                <input type="email" id="reg-email" placeholder="nombre@correo.com" autocomplete="off">
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña (Mínimo 6 caracteres)</label>
+                <input type="password" id="reg-pass" placeholder="******">
+            </div>
+
+            <button class="btn-registrar" onclick="window.crearCuentaEmail()">Registrarse y Continuar</button>
+            <button class="btn-volver" onclick="window.location.href='login.html'">Ya tengo cuenta, iniciar sesión</button>
+        </div>
+    </div>
+</body>
+</html>
