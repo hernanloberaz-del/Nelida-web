@@ -32,7 +32,7 @@
                 await setDoc(doc(db, "usuarios", user.uid), {
                     ultimoLogin: new Date()
                 }, { merge: true });
-            } catch (error) { console.error("Error base de datos:", error); }
+            } catch (error) { console.error("Error al actualizar login:", error); }
         };
 
         window.loginConGoogle = async () => {
@@ -59,7 +59,7 @@
             } catch (e) { alert("Error Apple: " + e.message); }
         };
 
-        // EXCLUSIVO LOGIN: Ya no intenta registrar si falla
+        // LIMPIO: Esta función SOLO loguea. Si falla, avisa y no crea nada.
         window.authEmail = async () => {
             const email = document.getElementById('email').value.trim();
             const pass = document.getElementById('pass').value;
@@ -71,7 +71,7 @@
                 await actualizarUltimoLogin(result.user);
                 window.location.href = "checkout.html"; 
             } catch (e) {
-                alert("❌ Correo o contraseña incorrectos. Si no tenés cuenta, tocá el botón de registrarse abajo.");
+                alert("❌ El correo o la contraseña son incorrectos. Si todavía no tenés una cuenta, hacé clic abajo en 'Registrate acá'.");
             }
         };
     </script>
