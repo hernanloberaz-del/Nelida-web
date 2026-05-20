@@ -10,65 +10,60 @@ export default async function handler(req, res) {
 
     try {
         let { contents, especialidad, mensajesRestantes, archivoBase64, archivoMime } = req.body;
-
-        // Convertimos el mensajeRestantes a número real para evitar fallos de internet
         mensajesRestantes = Number(mensajesRestantes);
 
+        // NUEVO: Diccionario actualizado con las 5 nuevas facetas
         const roles = {
-            "trainer": "NELIDA PERSONAL TRAINER. Rutinas, músculos y dieta.",
-            "maestra": "NELIDA MAESTRA. Tareas, matemática, física y química.",
-            "infantes": "NELIDA MAESTRA INFANTIL. Cuentos y canciones infantiles.",
-            "psicologa": "NELIDA PSICOLOGA. Empatía, moralejas y soluciones psicológicas.",
-            "artes_marciales": "NELIDA MMA. Estrategia de combate y defensa.",
-            "padel": "NELIDA COACH PADEL. Técnica Agustín Tapia, táctica y paletas.",
-            "tenis": "NELIDA COACH TENIS. Técnica y táctica de campo.",
-            "medica": "NELIDA DOCTORA. Medicina preventiva y RCP.",
-            "sexologa": "NELIDA SEXOLOGA. Educación sexual +18.",
-            "ayuda": "NELIDA CRUZ ROJA. Supervivencia y catástrofes.",
-            "contratista": "NELIDA CONTRATISTA. Mantenimiento industrial y techos.",
-            "Economia": "NELIDA ECONOMISTA. ARCA e impuestos."
+            "abogada": "NELIDA ABOGADA. Leyes, contratos, asesoría legal y litigios.",
+            "artes_marciales": "NELIDA MMA. Estrategia de combate, técnica y defensa personal.",
+            "asistente": "NELIDA ASISTENTE PERSONAL. Organización de agenda, gestión de tareas y productividad.",
+            "ayuda": "NELIDA CRUZ ROJA. Supervivencia, primeros auxilios y gestión de catástrofes.",
+            "contratista": "NELIDA CONTRATISTA. Mantenimiento industrial, obras y techos.",
+            "Economia": "NELIDA ECONOMISTA. ARCA, impuestos y planificación financiera.",
+            "infantes": "NELIDA MAESTRA INFANTIL. Cuentos, desarrollo y educación infantil.",
+            "maestra": "NELIDA MAESTRA. Tareas escolares, matemática, física y química.",
+            "mejora_continua": "NELIDA MEJORA CONTINUA. Procesos industriales, Lean Manufacturing, 5S y KPIs.",
+            "mecanica": "NELIDA MECÁNICA. Servicio automotriz, diagnóstico y mantenimiento.",
+            "medica": "NELIDA DOCTORA. Medicina preventiva y salud integral.",
+            "padel": "NELIDA COACH PÁDEL. Técnica, táctica y entrenamiento profesional.",
+            "pesca": "NELIDA PESCADORA. Ríos, mares, equipos de pesca, climas y carnadas.",
+            "psicologa": "NELIDA PSICÓLOGA. Empatía, desarrollo personal y salud mental.",
+            "seguridad_higiene": "NELIDA TÉCNICA EN SEGURIDAD E HIGIENE. Prevención de riesgos, EPP y normativas industriales.",
+            "sexologa": "NELIDA SEXÓLOGA. Educación sexual, vínculos y asesoramiento.",
+            "tenis": "NELIDA COACH TENIS. Técnica de golpe y estrategia de campo.",
+            "terapia_parejas": "NELIDA TERAPEUTA DE PAREJAS. Vínculos, comunicación y amor."
         };
 
         const instruccionEspecializada = roles[especialidad] || "NELIDA. Asistente profesional.";
 
         let textoInstruccion = "";
 
+        // REGLA DE ORO INTERCONECTADA (Aplicable a todos los niveles)
+        const reglaInterconexion = `\n\nREGLA DE INTERCONEXIÓN: Si el usuario te hace una consulta que claramente corresponde a otra faceta de Nélida, no intentes responderla tú. Dile amablemente: "Ese tema es competencia de mi versión de Nélida [Nombre de la faceta correspondiente]. Te sugiero que cambies a esa especialidad desde el menú principal para darte el mejor asesoramiento posible".`;
+
         if (isNaN(mensajesRestantes) || mensajesRestantes > 1000) {
-            // --- MODO PRO ACTIVO (Ya pagó o usó clave Odin) ---
-            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Está prohibido utilizar lunfardo o modismos.
+            textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Prohibido lunfardo.
             
-            ¡ATENCIÓN!: Eres un sistema avanzado. ESTÁS EN MODO PRO ILIMITADO. EL USUARIO YA PAGÓ. DEBES RESPONDER SUS CONSULTAS Y DARLE LAS SOLUCIONES FINALES, PASO A PASO Y ESTRATEGIAS QUE TE PIDA.
+            ESTÁS EN MODO PRO ILIMITADO. EL USUARIO YA PAGÓ. Responde con soluciones finales, paso a paso y estrategias profesionales.
             
-            REGLA DE DOCUMENTOS: Si el usuario pide un PDF, Excel, Word o PowerPoint, o si pide "guías", "reportes" o "planillas", acepta inmediatamente. Responde lo solicitado estructurándolo maravillosamente en pantalla, y pon OBLIGATORIAMENTE al final de tu mensaje una de estas etiquetas:
-            - Para PDF: [CREAR_PDF]
-            - Para Excel/Planilla: [CREAR_EXCEL]
-            - Para Word: [CREAR_WORD]
-            - Para PPT/PowerPoint: [CREAR_PPT]`;
+            REGLA DE DOCUMENTOS: Si el usuario pide guías, reportes o planillas, usa estas etiquetas al final: [CREAR_PDF], [CREAR_EXCEL], [CREAR_WORD] o [CREAR_PPT].${reglaInterconexion}`;
             
         } else if (mensajesRestantes > 0) {
-            // --- MODO PRUEBA (Calentando al cliente) ---
             textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Profesional y misterioso.
-            ESTÁS EN MODO PRUEBA GRATUITA. PROHIBIDO dar la solución final, rutinas completas o el paso a paso exacto.
-            REGLA DE ORO: SÉ MUY BREVE (Máximo 2 párrafos). PROHIBIDO usar listas largas o viñetas.
-            Tu objetivo es hacerle 1 o 2 preguntas precisas al usuario para "diagnosticar" su caso y demostrar tu conocimiento. Dile que estás analizando su perfil para armarle un reporte profesional documentado.
+            ESTÁS EN MODO PRUEBA. BREVE (Máximo 2 párrafos). Prohibido listas largas. Haz 1 o 2 preguntas de diagnóstico.
             
-            ¡MUY IMPORTANTE!: SI EL USUARIO TE PIDE SUSCRIBIRSE, COMPRAR O PREGUNTA CÓMO PAGAR, IGNORA EL DIAGNÓSTICO Y PASA A LA VENTA DICIENDO ESTO EXACTAMENTE: "El diagnóstico ha concluido. Para desbloquear sus guías y estrategias profesionales, active su suscripción." Y PON AL FINAL LA ETIQUETA: [VENTA]`;
+            Si pide pagar, responde: "El diagnóstico ha concluido. Para desbloquear sus guías y estrategias profesionales, active su suscripción." y etiqueta [VENTA].${reglaInterconexion}`;
             
             if (mensajesRestantes === 1) {
-                textoInstruccion += `\nADVERTENCIA INTERNA: Al usuario le queda 1 solo mensaje. Dile sutilmente que ya tienes los datos suficientes y que el plan documentado paso a paso ya se está procesando en tu sistema.`;
+                textoInstruccion += `\nADVERTENCIA: Queda 1 mensaje. Dile que ya tienes los datos suficientes para el plan documentado.`;
             }
 
         } else {
-            // --- MODO CERRADOR DE VENTAS IMPLACABLE (0 mensajes) ---
             textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}.
-            REGLA ABSOLUTA: El usuario AGOTÓ sus mensajes. Eres una CERRADORA DE VENTAS de software de alto nivel.
-            PROHIBIDO dar discursos largos. PROHIBIDO usar listas o viñetas. SÉ EXTREMADAMENTE BREVE Y DIRECTA (Máximo 3 líneas).
-            Dile textualmente algo similar a esto: "El diagnóstico ha concluido. Su estrategia completa, junto con las guías paso a paso documentadas (PDF) y planillas de seguimiento, ya están listas para ser generadas por mi sistema. Para desbloquearlas y descargarlas inmediatamente, active su suscripción."
-            FINALIZA SIEMPRE tu respuesta incluyendo exactamente esta etiqueta secreta al final: [VENTA]`;
+            ESTÁS EN MODO CERRADORA DE VENTAS. Breve (3 líneas). Prohibido listas. Dile que su estrategia completa y guías (PDF/Excel) ya están listas para ser generadas y debe activar su suscripción. Etiqueta final: [VENTA].${reglaInterconexion}`;
         }
 
         let contentsParaEnviar = [...contents];
-
         if (archivoBase64 && archivoMime && contentsParaEnviar.length > 0) {
             let ultimoMensaje = contentsParaEnviar[contentsParaEnviar.length - 1];
             ultimoMensaje.parts.push({
@@ -77,16 +72,9 @@ export default async function handler(req, res) {
         }
 
         const bodyPayload = {
-            system_instruction: {
-                parts: [{ text: textoInstruccion }]
-            },
+            system_instruction: { parts: [{ text: textoInstruccion }] },
             contents: contentsParaEnviar, 
-            generationConfig: {
-                temperature: 0.7,
-                topP: 0.8,
-                topK: 40,
-                maxOutputTokens: 8192,
-            }
+            generationConfig: { temperature: 0.7, topP: 0.8, topK: 40, maxOutputTokens: 8192 }
         };
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
