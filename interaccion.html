@@ -116,14 +116,12 @@
         }
 
         // LÍMITE DE USO JUSTO APLICADO (Blindaje de rentabilidad)
-        // El plan PRO arranca en 2000 mensajes. El gratis en 10.
         let mensajesRestantes = esUsuarioPro ? 2000 : 10; 
 
         function actualizarContador() {
             const ui = document.getElementById('contador-ui');
             if (ui) {
                 if (esUsuarioPro) {
-                    // Solo muestra los números si el usuario está abusando de la app (menos de 500 msj)
                     if (mensajesRestantes > 500) {
                         ui.innerText = "💎 MODO PRO ACTIVO";
                         ui.style.color = "var(--neon-purple)";
@@ -150,8 +148,11 @@
         let archivoMimeType = null;
         let archivoNombre = null;
 
+        // DICCIONARIO ACTUALIZADO CON LAS 5 NUEVAS FACETAS
         const mapaFondos = {
+            "abogada": "abogada.PNG",
             "artes_marciales": "ARTES MARCIALES MIXTAS.png",
+            "asistente": "nelida_asistente.PNG",
             "ayuda": "ayuda.png",
             "contratista": "contratista.PNG", 
             "Economia": "Economia.PNG",
@@ -159,9 +160,12 @@
             "maestra": "maestra.png",
             "mecanica": "mecanica.PNG",
             "medica": "medica.png",
+            "mejora_continua": "nelida_mc.PNG",
             "trainer": "nelida trainner.png",
             "padel": "padel.png",
+            "pesca": "nelida_pesca.PNG",
             "psicologa": "psicologa.png",
+            "seguridad_higiene": "nelida_tsh.PNG",
             "sexologa": "sexologa.png",
             "tenis": "tenis.png",
             "terapia_parejas": "terapia deparejas.PNG"
@@ -302,10 +306,8 @@
 
                     historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
                     
-                    // Guardamos el texto en memoria indexado por su ID Unico
                     window.textosAudio[idMsgUnico] = encodeURIComponent(respuesta);
 
-                    // El botón ahora llama al ID, no lleva el texto adentro
                     zona.innerHTML += `
                         <div style="margin-bottom: 25px; border-left: 2px solid var(--neon-green); padding-left: 15px;">
                             <div id="${idMsgUnico}">${marked.parse(respuesta)}</div>
@@ -391,7 +393,6 @@
             pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' });
         };
 
-        // LA SOLUCIÓN DEFINITIVA DE AUDIO
         window.hablar = (btnElement, idMsgUnico) => {
             const synth = window.speechSynthesis;
             const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*`_]/g, '');
@@ -413,11 +414,9 @@
                 } 
             } 
 
-            // Si es otro botón o el audio ya había terminado, matamos todo proceso
             synth.cancel(); 
             if (window.speechInterval) clearInterval(window.speechInterval);
 
-            // Reseteamos botón anterior si quedó colgado
             if (window.botonAudioActivo && window.botonAudioActivo !== btnElement) { 
                 window.botonAudioActivo.innerHTML = '🔊 Escuchar'; 
                 window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)'; 
@@ -453,9 +452,8 @@
                     clearInterval(window.speechInterval);
                 };
 
-                window.utteranceActual = lectura; // Evita que Chrome lo borre
+                window.utteranceActual = lectura; 
                 
-                // Hack para engañar a Chrome en textos largos
                 window.speechInterval = setInterval(() => {
                     if (synth.speaking && !synth.paused) {
                         synth.pause();
