@@ -121,9 +121,16 @@
         /* GRILLA DE MÉTODOS DE PAGO */
         .payment-methods {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 12px;
             margin-bottom: 30px;
+        }
+
+        /* Ajuste estético para cuando hay 3 botones principales alineados verticales/flex */
+        @media (min-width: 480px) {
+            .payment-methods {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
         }
 
         .method-btn {
@@ -135,11 +142,11 @@
             cursor: pointer;
             transition: 0.3s;
             font-weight: bold;
-            font-size: 0.9em;
+            font-size: 0.85em;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .method-btn:hover {
@@ -190,8 +197,6 @@
         .btn-mp-link { background: #009EE3; box-shadow: 0 4px 15px rgba(0, 158, 227, 0.3); }
         .btn-mp-link:hover { background: #0088c4; transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0, 158, 227, 0.5); }
 
-        .btn-stripe-link { background: #635bff; opacity: 0.5; cursor: not-allowed; }
-
         .secure-badge {
             text-align: center;
             margin-top: 35px;
@@ -238,8 +243,7 @@
             <div class="payment-methods">
                 <button type="button" class="method-btn active" onclick="mostrarMetodo('mp', this)">🤝 Mercado Pago</button>
                 <button type="button" class="method-btn" onclick="mostrarMetodo('paypal', this)">🅿️ PayPal</button>
-                <button type="button" class="method-btn" onclick="mostrarMetodo('tarjeta', this)">💳 Tarjeta (Stripe)</button>
-                <button type="button" class="method-btn" onclick="window.location.href='interaccion.html'" style="border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 8px rgba(0, 255, 204, 0.2);">🎁 Plan Gratis (10 Msjs)</button>
+                <button type="button" class="method-btn" onclick="window.location.href='menu.html'" style="border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 8px rgba(0, 255, 204, 0.2);">🎁 Plan Gratis (10 Msjs)</button>
             </div>
 
             <div id="mp-box" class="pay-box active-box">
@@ -252,12 +256,6 @@
                 <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5; margin-bottom: 20px;">Pagá de forma rápida y segura desde cualquier parte del mundo utilizando tu saldo de PayPal o tarjetas internacionales.</p>
                 <div id="paypal-button-container-P-1KW822034C763352DNIGHICQ"></div>
                 <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual internacional (USD)</p>
-            </div>
-
-            <div id="tarjeta-box" class="pay-box">
-                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Pagos internacionales seguros procesados por Stripe. Ideal para clientes fuera de Argentina.</p>
-                <a href="#" class="pay-btn btn-stripe-link" onclick="event.preventDefault()">Configurar Stripe</a>
-                <p style="text-align: center; color: var(--error-red); font-size: 0.8em; margin-top: 15px;">⚠ Enlace de pago pendiente de configuración</p>
             </div>
 
             <div class="secure-badge">
@@ -295,7 +293,8 @@
                 });
             },
             onApprove: function(data, actions) {
-                window.location.href = 'interaccion.html?pago=ok';
+                // MODIFICADO: PayPal ahora viaja directo al menú principal con la llave PRO activa
+                window.location.href = 'menu.html?pago=ok';
             }
         }).render('#paypal-button-container-P-1KW822034C763352DNIGHICQ');
     </script>
