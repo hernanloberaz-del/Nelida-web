@@ -115,16 +115,24 @@
             }, 800);
         }
 
-        // CRÉDITOS ACTUALIZADOS: 5 de prueba en vez de 3
-        let mensajesRestantes = esUsuarioPro ? 999999 : 10; 
+        // LÍMITE DE USO JUSTO APLICADO (Blindaje de rentabilidad)
+        // El plan PRO arranca en 2000 mensajes. El gratis en 10.
+        let mensajesRestantes = esUsuarioPro ? 2000 : 10; 
 
         function actualizarContador() {
             const ui = document.getElementById('contador-ui');
             if (ui) {
-                if (mensajesRestantes > 1000) {
-                    ui.innerText = "💎 MODO PRO ACTIVO";
-                    ui.style.color = "var(--neon-purple)";
-                    ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
+                if (esUsuarioPro) {
+                    // Solo muestra los números si el usuario está abusando de la app (menos de 500 msj)
+                    if (mensajesRestantes > 500) {
+                        ui.innerText = "💎 MODO PRO ACTIVO";
+                        ui.style.color = "var(--neon-purple)";
+                        ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
+                    } else {
+                        ui.innerText = `💎 MODO PRO: ${mensajesRestantes} mensajes restantes`;
+                        ui.style.color = "var(--neon-purple)";
+                        ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
+                    }
                 } else {
                     ui.innerText = `🔋 Créditos de prueba: ${mensajesRestantes}`;
                     ui.style.color = mensajesRestantes === 0 ? "#ff4d4d" : "var(--neon-green)";
@@ -209,7 +217,7 @@
             if (!texto && !archivoDataBase64) return;
 
             if (texto === "/Odin2026") {
-                mensajesRestantes = 999999; 
+                mensajesRestantes = 2000; 
                 actualizarContador();
                 input.value = "";
                 zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: Créditos recargados.</div>`;
