@@ -25,9 +25,33 @@
 
         let usuarioActual = null;
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) { usuarioActual = user; } 
-            else { window.location.href = "login.html"; }
+        onAuthStateChanged(auth, async (user) => {
+            if (user) { 
+                usuarioActual = user; 
+                
+                // NUEVO: Captura el éxito del pago (de PayPal o Mercado Pago) y activa el Modo PRO
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('pago') === 'ok') {
+                    try {
+                        // 1. Guardamos el estado PRO en la base de datos de Firebase
+                        await updateDoc(doc(db, "usuarios", user.uid), {
+                            plan: "PRO"
+                        });
+                        
+                        // 2. Guardamos en la memoria local del navegador como respaldo
+                        localStorage.setItem('nelida_plan', 'PRO');
+                        console.log("¡Plan PRO activado con éxito para el usuario!");
+
+                        // 3. Limpiamos la URL para que quede prolija sin el "?pago=ok"
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    } catch (error) {
+                        console.error("Error al activar el plan PRO en Firebase:", error);
+                    }
+                }
+            } 
+            else { 
+                window.location.href = "login.html"; 
+            }
         });
 
         // HE VUELTO A TUS RUTAS ORIGINALES QUE SÍ FUNCIONABAN
