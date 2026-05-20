@@ -8,7 +8,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        // Agregamos "increment" al final de esta importación para poder contar
+        import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -25,6 +26,22 @@
         
         const googleProvider = new GoogleAuthProvider();
         const facebookProvider = new FacebookAuthProvider();
+
+        // --- FUNCIÓN INVISIBLE DEL CONTADOR DE VISITAS ---
+        const contarVisita = async () => {
+            try {
+                // Guarda las visitas en la colección "analitica", dentro del documento "visitas"
+                await setDoc(doc(db, "analitica", "visitas"), {
+                    total: increment(1)
+                }, { merge: true });
+            } catch (error) {
+                console.error("Error al registrar visita:", error);
+            }
+        };
+
+        // Se ejecuta automáticamente apenas la persona carga la página o la App
+        contarVisita();
+        // ------------------------------------------------
 
         const actualizarUltimoLogin = async (user) => {
             try {
