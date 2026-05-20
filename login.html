@@ -7,7 +7,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, OAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -25,7 +25,6 @@
         
         const googleProvider = new GoogleAuthProvider();
         const facebookProvider = new FacebookAuthProvider();
-        const appleProvider = new OAuthProvider('apple.com');
 
         const actualizarUltimoLogin = async (user) => {
             try {
@@ -51,15 +50,6 @@
             } catch (e) { alert("Error Facebook: " + e.message); }
         };
 
-        window.loginConApple = async () => {
-            try {
-                const result = await signInWithPopup(auth, appleProvider);
-                await actualizarUltimoLogin(result.user);
-                window.location.href = "checkout.html"; 
-            } catch (e) { alert("Error Apple: " + e.message); }
-        };
-
-        // LIMPIO: Esta función SOLO loguea. Si falla, avisa y no crea nada.
         window.authEmail = async () => {
             const email = document.getElementById('email').value.trim();
             const pass = document.getElementById('pass').value;
@@ -85,7 +75,6 @@
         .btn-social { width: 100%; height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3); background: white; color: #333; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .btn-social img { width: 18px; height: 18px; }
         .btn-facebook { background: #1877F2; color: white; border: none; }
-        .btn-apple { background: #000; color: white; border: none; }
         .form-auth { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; }
         input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: rgba(255,255,255,0.95); font-size: 13px; color: #000; }
         .btn-entrar { background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; }
@@ -104,10 +93,6 @@
             <button class="btn-social btn-facebook" onclick="window.loginConFacebook()">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" alt="FB">
                 Continuar con Facebook
-            </button>
-            <button class="btn-social btn-apple" onclick="window.loginConApple()">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" style="filter: invert(1);" alt="Apple">
-                Continuar con Apple
             </button>
             <div class="form-auth">
                 <input type="email" id="email" placeholder="Tu correo electrónico">
