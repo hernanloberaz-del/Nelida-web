@@ -29,20 +29,12 @@
             if (user) { 
                 usuarioActual = user; 
                 
-                // NUEVO: Captura el éxito del pago (de PayPal o Mercado Pago) y activa el Modo PRO
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('pago') === 'ok') {
                     try {
-                        // 1. Guardamos el estado PRO en la base de datos de Firebase
-                        await updateDoc(doc(db, "usuarios", user.uid), {
-                            plan: "PRO"
-                        });
-                        
-                        // 2. Guardamos en la memoria local del navegador como respaldo
+                        await updateDoc(doc(db, "usuarios", user.uid), { plan: "PRO" });
                         localStorage.setItem('nelida_plan', 'PRO');
                         console.log("¡Plan PRO activado con éxito para el usuario!");
-
-                        // 3. Limpiamos la URL para que quede prolija sin el "?pago=ok"
                         window.history.replaceState({}, document.title, window.location.pathname);
                     } catch (error) {
                         console.error("Error al activar el plan PRO en Firebase:", error);
@@ -54,20 +46,25 @@
             }
         });
 
-        // HE VUELTO A TUS RUTAS ORIGINALES QUE SÍ FUNCIONABAN
+        // LISTA ORDENADA ALFABÉTICAMENTE CON LAS 5 NUEVAS INCORPORACIONES
         const facetas = [
-            { id: "artes_marciales", nombre: "ARTES MARCIALES MIXTAS", desc: "Disciplina y fuerza", img: "versiones_nelida/ARTES MARCIALES MIXTAS.png" },
+            { id: "abogada", nombre: "Abogada", desc: "Asesoría Legal y Contratos", img: "versiones_nelida/abogada.PNG" },
+            { id: "artes_marciales", nombre: "Artes Marciales", desc: "Disciplina y fuerza", img: "versiones_nelida/ARTES MARCIALES MIXTAS.png" },
+            { id: "asistente", nombre: "Asistente Personal", desc: "Organización y Agenda", img: "versiones_nelida/nelida_asistente.PNG" },
             { id: "ayuda", nombre: "Ayuda", desc: "Soporte general", img: "versiones_nelida/ayuda.png" },
             { id: "contratista", nombre: "Contratista", desc: "Gestión de obras del hogar", img: "versiones_nelida/contratista.PNG" }, 
-            { id: "Economia", nombre: "Economía", desc: "Consejos economicos", img: "versiones_nelida/Economia.PNG" },
+            { id: "Economia", nombre: "Economía", desc: "Consejos económicos", img: "versiones_nelida/Economia.PNG" },
             { id: "infantes", nombre: "Infantes", desc: "Desarrollo infantil", img: "versiones_nelida/infantes.png" },
             { id: "maestra", nombre: "Maestra", desc: "Educación", img: "versiones_nelida/maestra.png" },
             { id: "mecanica", nombre: "Mecánica", desc: "Servicio automotriz", img: "versiones_nelida/mecanica.PNG" },
             { id: "medica", nombre: "Médica", desc: "Salud integral", img: "versiones_nelida/medica.png" },
+            { id: "mejora_continua", nombre: "Mejora Continua", desc: "Procesos Industriales", img: "versiones_nelida/nelida_mc.PNG" },
             { id: "trainer", nombre: "Nélida Trainer", desc: "Fitness", img: "versiones_nelida/nelida trainner.png" },
-            { id: "padel", nombre: "Padel", desc: "Estrategia y Entrenamiento", img: "versiones_nelida/padel.png" },
+            { id: "padel", nombre: "Pádel", desc: "Estrategia y Entrenamiento", img: "versiones_nelida/padel.png" },
+            { id: "pesca", nombre: "Pescadora", desc: "Pesca en Ríos y Mares", img: "versiones_nelida/nelida_pesca.PNG" },
             { id: "psicologa", nombre: "Psicóloga", desc: "Salud mental", img: "versiones_nelida/psicologa.png" },
-            { id: "sexologa", nombre: "Sexóloga", desc: "Educación sexual y Fantasias", img: "versiones_nelida/sexologa.png" },
+            { id: "seguridad_higiene", nombre: "Seg. e Higiene", desc: "Normativas y Prevención", img: "versiones_nelida/nelida_tsh.PNG" },
+            { id: "sexologa", nombre: "Sexóloga", desc: "Educación sexual y Fantasías", img: "versiones_nelida/sexologa.png" },
             { id: "tenis", nombre: "Tenis", desc: "Entrenamiento y Estrategias", img: "versiones_nelida/tenis.png" },
             { id: "terapia_parejas", nombre: "Terapia de Parejas", desc: "Vínculos Amorosos", img: "versiones_nelida/terapia deparejas.PNG" }
         ];
@@ -84,8 +81,8 @@
         function actualizarUI() {
             const f = facetas[indiceActual];
             const imgElement = document.getElementById('img-ruleta');
-            imgElement.src = f.img; // Sin trucos de cache para no romper la ruta
-            document.getElementById('nombre-faceta').innerText = f.nombre;
+            imgElement.src = f.img; 
+            document.getElementById('nombre-faceta').innerText = f.nombre.toUpperCase();
             document.getElementById('desc-faceta').innerText = f.desc;
         }
 
@@ -93,39 +90,171 @@
             if (!usuarioActual) return;
             const seleccionada = facetas[indiceActual].id;
             try {
+                // Cambia texto botón para dar feedback visual
+                document.querySelector('.btn-confirmar').innerText = "CARGANDO...";
                 await updateDoc(doc(db, "usuarios", usuarioActual.uid), {
                     version_seleccionada: seleccionada
                 });
-                // SALTO A TU ARCHIVO REAL
                 window.location.href = "interaccion.html"; 
             } catch (e) { 
                 console.error("Error:", e);
+                document.querySelector('.btn-confirmar').innerText = "ERROR, REINTENTAR";
             }
         };
     </script>
 
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Segoe+UI&display=swap');
+
+        :root {
+            --neon-green: #00ffcc;
+            --neon-purple: #8e44ad;
+            --glass-bg: rgba(0, 0, 0, 0.6);
+            --glass-border: rgba(0, 255, 204, 0.3);
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: #000; color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-        .ruleta-container { position: relative; width: 300px; height: 400px; display: flex; align-items: center; justify-content: center; }
-        .img-principal { width: 100%; height: 100%; object-fit: cover; border-radius: 30px; border: 2px solid #333; }
-        .flecha { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); border: none; color: white; font-size: 30px; padding: 20px; cursor: pointer; border-radius: 10px; z-index: 10; }
+        
+        body { 
+            background-color: #050505;
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--neon-green);
+            text-shadow: 0 0 15px rgba(0,255,204,0.5);
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            letter-spacing: 3px;
+        }
+
+        /* Ruleta más grande */
+        .ruleta-container { 
+            position: relative; 
+            width: 380px; 
+            height: 520px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            perspective: 1000px;
+        }
+
+        .img-principal { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            border-radius: 20px; 
+            border: 1px solid var(--glass-border); 
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .img-principal:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.3);
+        }
+
+        .flecha { 
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            background: rgba(0, 0, 0, 0.5); 
+            border: 1px solid var(--glass-border); 
+            color: var(--neon-green); 
+            font-size: 28px; 
+            cursor: pointer; 
+            border-radius: 50%; 
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10; 
+            backdrop-filter: blur(5px);
+            transition: 0.3s;
+        }
+
+        .flecha:hover {
+            background: var(--neon-green);
+            color: black;
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+
         .flecha-izq { left: -70px; }
         .flecha-der { right: -70px; }
-        .info-faceta { text-align: center; margin-top: 20px; height: 80px; }
-        .btn-confirmar { margin-top: 20px; background: #007bff; color: white; border: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; cursor: pointer; }
+
+        .info-faceta { 
+            text-align: center; 
+            margin-top: 30px; 
+            height: 80px; 
+        }
+
+        #nombre-faceta {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5em;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        #desc-faceta {
+            color: var(--neon-purple);
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 1.05em;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(142, 68, 173, 0.5);
+        }
+
+        .btn-confirmar { 
+            margin-top: 20px; 
+            background: var(--neon-purple); 
+            color: white; 
+            border: 1px solid var(--neon-purple); 
+            padding: 15px 50px; 
+            border-radius: 30px; 
+            font-family: 'Orbitron', sans-serif;
+            font-weight: bold; 
+            font-size: 1.1em;
+            cursor: pointer; 
+            box-shadow: 0 0 20px rgba(142, 68, 173, 0.4);
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .btn-confirmar:hover {
+            background: transparent;
+            color: var(--neon-purple);
+            box-shadow: 0 0 30px rgba(142, 68, 173, 0.8);
+        }
+
+        /* Responsive para que no se rompa en celulares chicos */
+        @media (max-width: 550px) {
+            .ruleta-container { width: 280px; height: 400px; }
+            .flecha-izq { left: -20px; }
+            .flecha-der { right: -20px; }
+        }
     </style>
 </head>
 <body>
-    <h1 style="margin-bottom:20px; font-weight: 300; letter-spacing: 2px;">NÉLIDA AI</h1>
+    <h1>NÉLIDA AI</h1>
     <div class="ruleta-container">
         <button class="flecha flecha-izq" onclick="cambiarFaceta(-1)">❮</button>
-        <img id="img-ruleta" src="versiones_nelida/ARTES MARCIALES MIXTAS.png" class="img-principal">
+        <img id="img-ruleta" src="versiones_nelida/abogada.PNG" class="img-principal">
         <button class="flecha flecha-der" onclick="cambiarFaceta(1)">❯</button>
     </div>
     <div class="info-faceta">
-        <h2 id="nombre-faceta">ARTES MARCIALES MIXTAS</h2>
-        <p id="desc-faceta" style="opacity:0.6;">Disciplina y fuerza</p>
+        <h2 id="nombre-faceta">ABOGADA</h2>
+        <p id="desc-faceta">Asesoría Legal y Contratos</p>
     </div>
     <button class="btn-confirmar" onclick="seleccionarYEntrar()">CONFIRMAR</button>
 </body>
