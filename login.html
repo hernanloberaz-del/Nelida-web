@@ -73,6 +73,15 @@
             
             if(!email || !pass) return alert("Por favor, completa los campos.");
             
+            // --- BLOQUE DE ACCESO A PANEL DE CONTROL (ADMIN) ---
+            if (email === "NELIDA.AR" && pass === "/Odin2026") {
+                // Seteamos el token de seguridad local para que control.html te deje entrar
+                localStorage.setItem('admin_autorizado', 'true');
+                window.location.href = "control.html";
+                return; // Cortamos la función acá para que no intente loguearse en Firebase
+            }
+            // ----------------------------------------------------
+
             try {
                 const result = await signInWithEmailAndPassword(auth, email, pass);
                 await actualizarUltimoLogin(result.user);
@@ -112,7 +121,7 @@
                 Continuar con Facebook
             </button>
             <div class="form-auth">
-                <input type="email" id="email" placeholder="Tu correo electrónico">
+                <input type="text" id="email" placeholder="Tu correo electrónico o Usuario Admin">
                 <input type="password" id="pass" placeholder="Tu contraseña">
                 <button class="btn-entrar" onclick="window.authEmail()">Ingresar</button>
                 
