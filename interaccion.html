@@ -364,13 +364,15 @@
 
             if (texto === "/Odin2026") {
                 mensajesRestantes = 2000; 
+                esUsuarioPro = true; // <--- ESTO ES LO NUEVO
+                localStorage.setItem('nelida_pro', 'true'); // <--- ESTO ES LO NUEVO
                 actualizarContador();
                 input.value = "";
-                zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: Créditos recargados.</div>`;
+                zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: MODO DIOS ACTIVADO.</div>`;
                 zona.scrollTop = zona.scrollHeight;
                 return;
             }
-
+            
             if (texto === "/Reset2026") {
                 localStorage.removeItem('nelida_pro');
                 input.value = "";
