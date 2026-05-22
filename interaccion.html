@@ -373,10 +373,10 @@
             document.getElementById('file-indicator').style.display = 'none';
         };
 
-        // NUEVA FUNCIÓN: Envía el texto a Vercel para procesarlo con OpenAI y reproduce el audio
+        // Función original desactivada para evitar conflictos con el botón
+        /*
         async function reproducirVozNelida(texto) {
             try {
-                // Previene que Nélida hable si se está procesando un error o comandos ocultos
                 if (texto.includes('Error') || texto.includes('Reset') || texto.includes('🔓')) return;
                 
                 const respuesta = await fetch('/api/hablar', {
@@ -397,6 +397,7 @@
                 console.error("No se pudo conectar con el sistema de voz en Vercel:", error);
             }
         }
+        */
 
         window.enviar = async () => {
             const input = document.getElementById('userInput');
@@ -490,15 +491,19 @@
                             </div>
                         </div>`;
                     
-                    // ACÁ ESTÁ LA MAGIA: Cuando Nélida responde, llamamos a la API de voz.
-                    // Limpiamos la respuesta de caracteres raros o de formato antes de mandarla a leer.
+                    // Comentamos la ejecución automática para que el usuario controle el audio con el botón
+                    /*
                     const textoParaLeer = respuesta.replace(/\*\*/g, '').replace(/_/g, '').replace(/#/g, '');
                     reproducirVozNelida(textoParaLeer);
+                    */
                     
+                    // Comentamos el auto-click para evitar que intente reproducir automáticamente
+                    /*
                     setTimeout(() => {
                         const btn = zona.querySelector(`button[onclick*="${idMsgUnico}"]`);
                         if (btn) btn.click();
                     }, 100);
+                    */
 
                     if (mensajesRestantes === 0 && !botonesGenerados.includes('OBTENER ACCESO PRO')) {
                         zona.innerHTML += `
@@ -521,68 +526,56 @@
         window.exportarWord = (id) => { const element = document.getElementById(id); const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento</title></head><body>${element.innerHTML}</body></html>`; const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Documento_NelidaAI.doc'; a.click(); };
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
 
-        window.hablar = (btnElement, idMsgUnico) => {
-            const synth = window.speechSynthesis;
+        // NUEVA FUNCIÓN HABLAR: Conectada directamente a OpenAI a través de Vercel
+        window.hablar = async (btnElement, idMsgUnico) => {
             const cajaVideo = document.getElementById('caja-video'); 
             const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*`_]/g, '');
             
-            if (window.botonAudioActivo === btnElement) {
-                if (synth.speaking && !synth.paused) { 
-                    synth.pause(); 
-                    if(cajaVideo) cajaVideo.classList.remove('modo-hablando'); 
-                    btnElement.innerHTML = '▶️ Continuar'; 
-                    return;
-                } 
-                if (synth.paused) { 
-                    synth.resume(); 
-                    if(cajaVideo) cajaVideo.classList.add('modo-hablando'); 
-                    btnElement.innerHTML = '⏸️ Pausar'; 
-                    return;
-                } 
-            } 
+            // Estado de carga
+            btnElement.innerHTML = '⏳ Cargando voz...';
+            btnElement.style.opacity = '0.7';
 
-            synth.cancel(); 
-            if (window.speechInterval) clearInterval(window.speechInterval);
-
-            if (window.botonAudioActive && window.botonAudioActivo !== btnElement) { 
-                window.botonAudioActivo.innerHTML = '🔊 Escuchar'; 
-                window.botonAudioActivo.style.background = 'rgba(0, 255, 204, 0.15)'; 
-                window.botonAudioActivo.style.borderColor = 'var(--neon-green)'; 
-            }
-
-            window.botonAudioActivo = btnElement;
-
-            setTimeout(() => {
-                const lectura = new SpeechSynthesisUtterance(textoLimpio);
-                lectura.lang = 'es-AR'; 
+            try {
+                const respuesta = await fetch('/api/hablar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: textoLimpio })
+                });
                 
-                lectura.onstart = () => {
-                    btnElement.innerHTML = '⏸️ Pausar'; 
+                const data = await respuesta.json();
+                
+                if (data.audioBase64) {
+                    const audio = new Audio("data:audio/mp3;base64," + data.audioBase64);
+                    
+                    // Iniciamos animación y sonido
+                    btnElement.innerHTML = '🔊 Reproduciendo...';
+                    btnElement.style.opacity = '1';
                     if(cajaVideo) cajaVideo.classList.add('modo-hablando');
-                };
+                    
+                    audio.play();
 
-                lectura.onend = () => { 
-                    btnElement.innerHTML = '🔊 Escuchar'; 
-                    window.botonAudioActivo = null; 
-                    clearInterval(window.speechInterval);
-                    if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                };
-                
-                lectura.onerror = () => {
-                    btnElement.innerHTML = '🔊 Escuchar'; 
-                    window.botonAudioActivo = null; 
-                    clearInterval(window.speechInterval);
-                    if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                };
+                    // Cuando termina de hablar
+                    audio.onended = () => {
+                        btnElement.innerHTML = '🔊 Escuchar';
+                        if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
+                    };
+                    
+                    // Por si el usuario pausa/cancela el audio recargando la página
+                    audio.onerror = () => {
+                        btnElement.innerHTML = '🔊 Escuchar';
+                        if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
+                    };
 
-                window.utteranceActual = lectura; 
-                window.speechInterval = setInterval(() => {
-                    if (synth.speaking && !synth.paused) { synth.pause(); synth.resume(); } 
-                    else if (!synth.speaking) { clearInterval(window.speechInterval); }
-                }, 14000);
-
-                synth.speak(lectura); 
-            }, 250); 
+                } else {
+                    alert("Error en la voz: " + (data.error || "Revisa la consola"));
+                    btnElement.innerHTML = '🔊 Escuchar';
+                    btnElement.style.opacity = '1';
+                }
+            } catch (error) {
+                alert("Fallo la conexión con el servidor de voz.");
+                btnElement.innerHTML = '🔊 Escuchar';
+                btnElement.style.opacity = '1';
+            }
         };
     </script>
 </body>
