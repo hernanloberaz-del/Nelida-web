@@ -470,11 +470,10 @@
         window.exportarWord = (id) => { const element = document.getElementById(id); const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento</title></head><body>${element.innerHTML}</body></html>`; const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Documento_NelidaAI.doc'; a.click(); };
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
 
-        window.hablar = async (btnElement, idMsgUnico) => {
-            // FORZAMOS LECTURA DEL ESTADO REAL DEL NAVEGADOR
+       window.hablar = async (btnElement, idMsgUnico) => {
+            // 1. FORZAMOS LECTURA DEL ESTADO REAL
             const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
-            // Si no está en modo dios (PRO), bloqueamos
             if (!esProActual) {
                 alert("💎 La función de audio es exclusiva para usuarios PRO.");
                 window.location.href = 'checkout.html';
@@ -483,7 +482,7 @@
 
             const cajaVideo = document.getElementById('caja-video');
             
-            // DETENER: Si el audio ya está sonando, lo frenamos
+            // 2. DETENER
             if (window.audioNelida && !window.audioNelida.paused) {
                 window.audioNelida.pause();
                 window.audioNelida.currentTime = 0;
@@ -492,7 +491,7 @@
                 return;
             }
 
-            // REPRODUCIR
+            // 3. REPRODUCIR
             const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
             btnElement.innerHTML = '⏳ Cargando voz...';
             
@@ -515,11 +514,11 @@
                         if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
                     };
                 } else {
-                    alert("Error en la voz");
+                    alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
                     btnElement.innerHTML = '🔊 Escuchar';
                 }
             } catch (e) {
-                alert("Error de conexión");
+                alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
                 btnElement.innerHTML = '🔊 Escuchar';
             }
         };
