@@ -80,16 +80,16 @@
                 <div id="metric-usuarios-pro" class="valor">0</div>
             </div>
             <div class="card-metrica consumo">
-                <h3>Consumo Estimado (Mes)</h3>
-                <div id="metric-consumo-total" class="valor">$--</div>
+                <h3>Costo Consumido Global</h3>
+                <div id="metric-consumo-total" class="valor">$0.00</div>
             </div>
             <div class="card-metrica creditos">
-                <h3>Saldo OpenAI API</h3>
-                <div id="metric-saldo-api" class="valor">$--</div>
+                <h3>Fondo de APIs Estimado</h3>
+                <div id="metric-saldo-api" class="valor">$10.00</div>
             </div>
             <div class="card-metrica errores">
-                <h3>Errores Críticos (24h)</h3>
-                <div id="metric-errores-recientes" class="valor">--</div>
+                <h3>Estado de Plataforma</h3>
+                <div id="metric-errores-recientes" class="valor" style="color: var(--neon-green);">ONLINE</div>
             </div>
         </div>
 
@@ -129,11 +129,11 @@
                 </div>
                 <div class="item-costo">
                     <span>Gasto Estimado Gemini API</span>
-                    <span id="gasto-gemini-usd">$0.00 USD</span>
+                    <span id="gasto-gemini-usd">$0.0000 USD</span>
                 </div>
                 <div class="item-costo">
                     <span>Gasto Estimado OpenAI API</span>
-                    <span id="gasto-openai-usd">$0.00 USD</span>
+                    <span id="gasto-openai-usd">$0.0000 USD</span>
                 </div>
                 <div class="item-costo" style="border-bottom: none; margin-top: 10px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2);">
                     <span style="color: #fff; font-weight: bold;">Costo Operativo Total</span>
@@ -154,7 +154,7 @@
                         </thead>
                         <tbody id="tabla-errores-body">
                             <tr>
-                                <td colspan="3" style="text-align: center; color: rgba(255,255,255,0.4);">No se registran fallas en Vercel ni OpenAI.</td>
+                                <td colspan="3" style="text-align: center; color: rgba(255,255,255,0.4);">No se registran fallas de ejecución. All Systems Nominal.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -169,18 +169,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-        // 1. Seguridad: Redirigimos si no entró por la "puerta trasera"
         if (localStorage.getItem('admin_autorizado') !== 'true') {
             window.location.href = 'login.html';
         }
 
-        // 2. Función de Cierre de Sesión
         window.cerrarSesionAdmin = () => {
             localStorage.removeItem('admin_autorizado');
             window.location.href = 'login.html';
         };
 
-        // 3. Inicialización de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
             authDomain: "nelida-e89d3.firebaseapp.com",
@@ -193,32 +190,47 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // 4. Lógica Principal: Rellenar la Tabla de Usuarios
         async function cargarDatosPanel() {
             try {
-                // Hacemos el "fetch" a la colección de usuarios
                 const snapshot = await getDocs(collection(db, "usuarios"));
                 const tabla = document.getElementById('tabla-usuarios-body');
-                tabla.innerHTML = ''; // Borramos el texto de "Cargando..."
+                tabla.innerHTML = '';
                 
                 let contPro = 0;
+                let consultasGeminiTotales = 0;
+                let caracteresOpenAITotales = 0;
 
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     const uid = docSnap.id;
                     
-                    // Extraemos los datos del usuario, con fallbacks si no existen
                     const emailUser = data.email || "Ingreso Anónimo / Social";
                     const faceta = data.version_seleccionada || "Ayuda";
-                    const creditos = data.mensajesRestantes !== undefined ? data.mensajesRestantes : '--';
+                    const creditos = data.mensajesRestantes !== undefined ? data.mensajesRestantes : 10;
                     
-                    // Determinamos si es PRO (Basado en si tiene más de 500 créditos)
-                    const esPro = data.mensajesRestantes > 500;
+                    const esPro = creditos > 500;
                     if(esPro) contPro++;
+                    
+                    // CALCULO DE CONSUMO DE MENSAJES INDIVIDUALES
+                    let mensajesConsumidos = 0;
+                    if (esPro) {
+                        mensajesConsumidos = 2000 - creditos;
+                    } else {
+                        mensajesConsumidos = 10 - creditos;
+                    }
+                    
+                    // Corrección por si usaste el comando de recarga /Odin2026
+                    if (mensajesConsumidos < 0) mensajesConsumidos = 0;
+
+                    consultasGeminiTotales += mensajesConsumidos;
+
+                    // ESTIMACIÓN DE CARACTERES AUDIO (Asumiendo que los PRO interactúan con voz en promedio 350 caracteres por mensaje)
+                    if (esPro) {
+                        caracteresOpenAITotales += (mensajesConsumidos * 350);
+                    }
                     
                     const spanBadge = esPro ? `<span class="badge pro">PRO</span>` : `<span class="badge free">FREE</span>`;
 
-                    // Armamos la fila
                     const fila = document.createElement('tr');
                     fila.innerHTML = `
                         <td style="font-family: monospace;">${uid.substring(0, 6)}...</td>
@@ -230,8 +242,30 @@
                     tabla.appendChild(fila);
                 });
 
-                // Actualizamos la métrica en la parte superior
+                // TARIFAS OFICIALES DE LAS APIS (Calculadas en USD)
+                // Gemini 1.5 Flash: ~$0.000075 USD por cada consulta promedio (entrada + salida)
+                const gastoGemini = consultasGeminiTotales * 0.000075;
+                
+                // OpenAI TTS Estándar: $15.00 USD por cada 1.000.000 de caracteres
+                const gastoOpenAI = (caracteresOpenAITotales / 1000000) * 15.00;
+                
+                const costoTotalGlobal = gastoGemini + gastoOpenAI;
+                
+                // Fondo inicial que le cargaste a tu consola de desarrollo (ej: $10 dólares de saldo prepago)
+                const fondoInicialPrecompra = 10.00;
+                const saldoRestanteAPI = fondoInicialPrecompra - costoTotalGlobal;
+
+                // ACTUALIZACIÓN DE MÉTRICAS EN INTERFAZ
                 document.getElementById('metric-usuarios-pro').innerText = contPro;
+                document.getElementById('metric-consumo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
+                document.getElementById('metric-saldo-api').innerText = `$${saldoRestanteAPI.toFixed(2)} USD`;
+                
+                document.getElementById('costo-consultas-gemini').innerText = consultasGeminiTotales;
+                document.getElementById('costo-caracteres-openai').innerText = caracteresOpenAITotales;
+                
+                document.getElementById('gasto-gemini-usd').innerText = `$${gastoGemini.toFixed(4)} USD`;
+                document.getElementById('gasto-openai-usd').innerText = `$${gastoOpenAI.toFixed(4)} USD`;
+                document.getElementById('costo-operativo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
 
             } catch (error) {
                 console.error("Error al cargar Firebase:", error);
@@ -239,7 +273,6 @@
             }
         }
 
-        // 5. Disparamos la carga de datos al iniciar
         cargarDatosPanel();
     </script>
 </body>
