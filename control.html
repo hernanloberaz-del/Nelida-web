@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NELIDA-AI - Panel de Control Global</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #00ffcc;
+            --neon-purple: #8e44ad;
+            --neon-blue: #00d2ff;
+            --glass-bg: rgba(10, 10, 10, 0.9);
+            --glass-border: rgba(0, 255, 204, 0.15);
+            --bg-dark: #030303;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Segoe UI', sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        h1, h2, h3, .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        .header-admin {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .header-admin h1 {
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+        }
+
+        .header-admin h1 span {
+            color: var(--neon-green);
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: 1px solid #ff4d4d;
+            color: #ff4d4d;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            transition: 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #ff4d4d;
+            color: #fff;
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
+        }
+
+        /* Contenedor de Tarjetas */
+        .grid-metricas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card-metrica {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.02);
+            transition: transform 0.3s;
+        }
+
+        .card-metrica:hover {
+            transform: translateY(-3px);
+        }
+
+        .card-metrica h3 {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .card-metrica .valor {
+            font-size: 28px;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .card-metrica.pro .valor { color: var(--neon-purple); text-shadow: 0 0 10px rgba(142, 68, 173, 0.4); }
+        .card-metrica.consumo .valor { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
+        .card-metrica.creditos .valor { color: var(--neon-green); text-shadow: 0 0 10px rgba(0, 255, 204, 0.4); }
+        .card-metrica.errores .valor { color: #ff4d4d; text-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
+
+        /* Bloques de Tablas y Control */
+        .seccion-panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .seccion-panel h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #fff;
+            border-left: 4px solid var(--neon-blue);
+            padding-left: 12px;
+        }
+
+        /* Estilos de Tabla */
+        .contenedor-tabla {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background: rgba(0, 255, 204, 0.05);
+            color: var(--neon-green);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            letter-spacing: 1px;
+            padding: 14px;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .badge.pro {
+            background: rgba(142, 68, 173, 0.2);
+            color: #be7bdf;
+            border: 1px solid var(--neon-purple);
+        }
+
+        .badge.free {
+            background: rgba(255, 255, 255, 0.05);
+            color: #aaa;
+            border: 1px solid #555;
+        }
+
+        .texto-error {
+            color: #ff4d4d;
+            font-family: monospace;
+            background: rgba(255, 77, 77, 0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .analisis-costos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .analisis-costos {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .item-costo {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .item-costo span:first-child {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .item-costo span:last-child {
+            font-weight: bold;
+            font-family: 'Orbitron', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <div class="header-admin">
+            <h1>NELIDA-AI // <span>PANEL DE CONTROL</span></h1>
+            <button class="btn-logout" onclick="window.cerrarSesionAdmin()">CERRAR SESIÓN</button>
+        </div>
+
+        <div class="grid-metricas">
+            <div class="card-metrica pro">
+                <h3>Usuarios PRO Activos</h3>
+                <div id="metric-usuarios-pro" class="valor">--</div>
+            </div>
+            <div class="card-metrica consumo">
+                <h3>Consumo Estimado (Mes)</h3>
+                <div id="metric-consumo-total" class="valor">$--</div>
+            </div>
+            <div class="card-metrica creditos">
+                <h3>Saldo OpenAI API</h3>
+                <div id="metric-saldo-api" class="valor">$--</div>
+            </div>
+            <div class="card-metrica errores">
+                <h3>Errores Críticos (24h)</h3>
+                <div id="metric-errores-recientes" class="valor">--</div>
+            </div>
+        </div>
+
+        <div class="seccion-panel">
+            <h2>Resumen de Usuarios y Créditos Disponibles</h2>
+            <div class="contenedor-tabla">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID Usuario</th>
+                            <th>Email</th>
+                            <th>Faceta Activa</th>
+                            <th>Estado Plan</th>
+                            <th>Mensajes Restantes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-usuarios-body">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: rgba(255,255,255,0.4);">Cargando base de datos de Firebase...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="analisis-costos">
+            
+            <div class="seccion-panel">
+                <h2>Evaluación de Funcionamiento y Costos</h2>
+                <div class="item-costo">
+                    <span>Consultas Totales a Gemini Flash</span>
+                    <span id="costo-consultas-gemini" style="color: var(--neon-blue);">0</span>
+                </div>
+                <div class="item-costo">
+                    <span>Caracteres de Voz Procesados (OpenAI)</span>
+                    <span id="costo-caracteres-openai" style="color: var(--neon-purple);">0</span>
+                </div>
+                <div class="item-costo">
+                    <span>Gasto Estimado Gemini API</span>
+                    <span id="gasto-gemini-usd">$0.00 USD</span>
+                </div>
+                <div class="item-costo">
+                    <span>Gasto Estimado OpenAI API</span>
+                    <span id="gasto-openai-usd">$0.00 USD</span>
+                </div>
+                <div class="item-costo" style="border-bottom: none; margin-top: 10px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2);">
+                    <span style="color: #fff; font-weight: bold;">Costo Operativo Total</span>
+                    <span id="costo-operativo-total" style="color: var(--neon-green); font-size: 1.2em;">$0.00 USD</span>
+                </div>
+            </div>
+
+            <div class="seccion-panel">
+                <h2>Reporte de Errores del Sistema</h2>
+                <div class="contenedor-tabla">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hora / Fecha</th>
+                                <th>Usuario</th>
+                                <th>Detalle del Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-errores-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: rgba(255,255,255,0.4);">No se registran fallas en Vercel ni OpenAI.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script type="module">
+        // Seguridad Inmediata: Si no pasó por el Login de forma exitosa, lo sacamos del panel
+        if (localStorage.getItem('admin_autorizado') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        // Función global para cerrar sesión de manera segura
+        window.cerrarSesionAdmin = () => {
+            localStorage.removeItem('admin_autorizado');
+            window.location.href = 'login.html';
+        };
+    </script>
+</body>
+</html>
