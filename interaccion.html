@@ -5,235 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nélida AI - Interface Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/PptxGenJS@3.12.0/dist/pptxgen.bundle.js"></script>
-    
     <link rel="stylesheet" href="style.css">
     <style>
-        :root {
-            --neon-green: #00ffcc;
-            --neon-purple: #8e44ad;
-            --neon-blue: #00d2ff;
-            --glass-bg: rgba(0, 0, 0, 0.85);
-            --glass-border: rgba(0, 255, 204, 0.25);
-        }
+        :root { --neon-green: #00ffcc; --neon-purple: #8e44ad; --neon-blue: #00d2ff; --glass-bg: rgba(0, 0, 0, 0.85); --glass-border: rgba(0, 255, 204, 0.25); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            background-color: #030303; 
-            font-family: 'Orbitron', 'Segoe UI', sans-serif; 
-            color: #fff; 
-            min-height: 100vh;
-        }
-        
-        #fondo-nelida { 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            z-index: 1; 
-            filter: brightness(0.25) blur(4px); 
-        }
-        
-        .interfaz-usuario { 
-            position: relative; 
-            z-index: 10; 
-            display: flex; 
-            flex-direction: row; 
-            justify-content: space-between; 
-            align-items: center; 
-            height: 100vh; 
-            padding: 2% 4%; 
-            gap: 25px; 
-        }
-        
-        .contenedor-estetico { 
-            background: var(--glass-bg); 
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border); 
-            border-radius: 16px; 
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.05); 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-        }
-        
+        body { background-color: #030303; font-family: 'Orbitron', 'Segoe UI', sans-serif; color: #fff; min-height: 100vh; }
+        #fondo-nelida { position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; filter: brightness(0.25) blur(4px); }
+        .interfaz-usuario { position: relative; z-index: 10; display: flex; flex-direction: row; justify-content: space-between; align-items: center; height: 100vh; padding: 2% 4%; gap: 25px; }
+        .contenedor-estetico { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 16px; box-shadow: 0 0 30px rgba(0, 255, 204, 0.05); display: flex; flex-direction: column; overflow: hidden; }
         #caja-chat { width: 62%; height: 85vh; }
-        #caja-video { 
-            width: 35%; 
-            height: 60vh; 
-            position: relative; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.95);
-            border-color: rgba(0, 210, 255, 0.2);
-            transition: 0.5s ease-in-out;
-            box-shadow: 0 0 25px rgba(0, 210, 255, 0.05);
-        }
-        
-        #caja-video.modo-hablando {
-            border-color: var(--neon-blue);
-            box-shadow: 0 0 40px rgba(0, 210, 255, 0.35), 0 0 70px rgba(142, 68, 173, 0.2);
-        }
-        
-        .status-bar { 
-            padding: 14px 20px; 
-            background: rgba(0, 255, 204, 0.07); 
-            border-bottom: 1px solid var(--glass-border); 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            font-size: 0.85em; 
-            letter-spacing: 2px; 
-            text-transform: uppercase; 
-        }
-        
+        #caja-video { width: 35%; height: 60vh; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.95); border-color: rgba(0, 210, 255, 0.2); transition: 0.5s ease-in-out; box-shadow: 0 0 25px rgba(0, 210, 255, 0.05); }
+        #caja-video.modo-hablando { border-color: var(--neon-blue); box-shadow: 0 0 40px rgba(0, 210, 255, 0.35), 0 0 70px rgba(142, 68, 173, 0.2); }
+        .status-bar { padding: 14px 20px; background: rgba(0, 255, 204, 0.07); border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; letter-spacing: 2px; text-transform: uppercase; }
         #contador-ui { font-weight: bold; font-size: 1.1em; transition: 0.3s; }
-
-        #zona-mensajes { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 25px; 
-            color: #e5e5e5; 
-            font-size: 1.05em; 
-            line-height: 1.6; 
-            scrollbar-width: thin; 
-            scrollbar-color: var(--neon-green) transparent; 
-        }
-
-        .msg-usuario {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px 12px 0 12px;
-            padding: 12px 18px;
-            margin-bottom: 15px;
-            max-width: 85%;
-            margin-left: auto;
-            text-align: left;
-            color: rgba(255,255,255,0.9);
-        }
-
-        .msg-nelida {
-            background: rgba(0, 255, 204, 0.01);
-            border-left: 3px solid var(--neon-green);
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 0 12px 12px 12px;
-        }
-        
-        .input-box { 
-            display: flex; 
-            padding: 16px 20px; 
-            gap: 12px; 
-            background: rgba(0, 0, 0, 0.7); 
-            border-top: 1px solid var(--glass-border); 
-            align-items: center; 
-        }
-        
+        #zona-mensajes { flex: 1; overflow-y: auto; padding: 25px; color: #e5e5e5; font-size: 1.05em; line-height: 1.6; scrollbar-width: thin; scrollbar-color: var(--neon-green) transparent; }
+        .msg-usuario { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px 12px 0 12px; padding: 12px 18px; margin-bottom: 15px; max-width: 85%; margin-left: auto; text-align: left; color: rgba(255,255,255,0.9); }
+        .msg-nelida { background: rgba(0, 255, 204, 0.01); border-left: 3px solid var(--neon-green); padding: 15px; margin-bottom: 25px; border-radius: 0 12px 12px 12px; }
+        .input-box { display: flex; padding: 16px 20px; gap: 12px; background: rgba(0, 0, 0, 0.7); border-top: 1px solid var(--glass-border); align-items: center; }
         .input-wrapper { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        
-        #file-indicator { 
-            display: none; 
-            align-items: center; 
-            gap: 10px; 
-            background: rgba(0, 255, 204, 0.1); 
-            border: 1px solid var(--neon-green); 
-            padding: 6px 12px; 
-            border-radius: 5px; 
-            font-size: 0.85em; 
-            color: var(--neon-green); 
-            width: fit-content; 
-            font-family: 'Segoe UI', sans-serif; 
-        }
+        #file-indicator { display: none; align-items: center; gap: 10px; background: rgba(0, 255, 204, 0.1); border: 1px solid var(--neon-green); padding: 6px 12px; border-radius: 5px; font-size: 0.85em; color: var(--neon-green); width: fit-content; font-family: 'Segoe UI', sans-serif; }
         #file-indicator button { background: none; border: none; color: #ff4d4d; cursor: pointer; font-weight: bold; font-size: 1.1em; padding: 0 5px; }
-        
-        input[type="text"] { 
-            width: 100%; 
-            background: rgba(255, 255, 255, 0.03); 
-            border: 1px solid var(--glass-border); 
-            color: #fff; 
-            padding: 14px; 
-            border-radius: 10px; 
-            outline: none;
-            font-size: 15px;
-            height: 50px;
-            transition: 0.3s;
-        }
-        
-        .btn-action { 
-            background: var(--neon-purple); 
-            color: white; 
-            border: none; 
-            padding: 0 25px; 
-            cursor: pointer; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            height: 50px;
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1px;
-            font-size: 13px;
-            transition: 0.3s;
-        }
+        input[type="text"] { width: 100%; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); color: #fff; padding: 14px; border-radius: 10px; outline: none; font-size: 15px; height: 50px; transition: 0.3s; }
+        .btn-action { background: var(--neon-purple); color: white; border: none; padding: 0 25px; cursor: pointer; border-radius: 10px; font-weight: bold; height: 50px; font-family: 'Orbitron', sans-serif; letter-spacing: 1px; font-size: 13px; transition: 0.3s; }
         .btn-action:hover { filter: brightness(1.15); }
-        
         .btn-clip { background: none; border: none; font-size: 26px; cursor: pointer; padding: 0 5px; height: 50px; display: flex; align-items: center; justify-content: center; }
-        
         video { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; }
         .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; animation: pulse 1.5s infinite; padding-left: 15px; }
         @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
-
         .descarga-dinamica { border: none; color: white; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-
-        @media (max-width: 768px) {
-            body { overflow-y: auto; }
-            .interfaz-usuario { flex-direction: column; height: auto; padding: 12px; gap: 15px; justify-content: flex-start; }
-            #caja-video { width: 100%; height: 190px; margin-top: 5px; }
-            #caja-chat { width: 100%; height: calc(100vh - 230px); min-height: 400px; }
-            #zona-mensajes { padding: 15px; font-size: 0.95em; }
-            .input-box { padding: 10px; gap: 8px; }
-            input[type="text"] { font-size: 16px; padding: 10px; } 
-            .btn-action { padding: 0 15px; font-size: 11px; }
-        }
+        @media (max-width: 768px) { body { overflow-y: auto; } .interfaz-usuario { flex-direction: column; height: auto; padding: 12px; gap: 15px; justify-content: flex-start; } #caja-video { width: 100%; height: 190px; margin-top: 5px; } #caja-chat { width: 100%; height: calc(100vh - 230px); min-height: 400px; } }
     </style>
 </head>
 <body>
     <img id="fondo-nelida" src="versiones_nelida/ayuda.png">
-    
     <div class="interfaz-usuario">
         <div id="caja-chat" class="contenedor-estetico">
-            <div class="status-bar">
-                <div><span id="label-especialidad">SISTEMA NÉLIDA</span></div>
-                <div id="contador-ui">Cargando sistema...</div>
-            </div>
-            <div id="zona-mensajes">
-                <div id="msg-inicial" class="msg-nelida"><b>Nélida:</b> Sincronizando faceta...</div>
-            </div>
+            <div class="status-bar"><div><span id="label-especialidad">SISTEMA NÉLIDA</span></div><div id="contador-ui">Cargando sistema...</div></div>
+            <div id="zona-mensajes"><div id="msg-inicial" class="msg-nelida"><b>Nélida:</b> Sincronizando faceta...</div></div>
             <div class="input-box">
                 <input type="file" id="archivoAdjunto" style="display: none;" accept=".pdf, .xls, .xlsx, .doc, .docx, .txt, image/*">
                 <button type="button" class="btn-clip" onclick="document.getElementById('archivoAdjunto').click()" title="Adjuntar documento">📎</button>
-                
                 <div class="input-wrapper">
-                    <div id="file-indicator">
-                        <span id="file-name">📎 Archivo.pdf</span>
-                        <button onclick="window.quitarArchivo()" title="Quitar archivo">✖</button>
-                    </div>
+                    <div id="file-indicator"><span id="file-name">📎 Archivo.pdf</span><button onclick="window.quitarArchivo()" title="Quitar archivo">✖</button></div>
                     <input type="text" id="userInput" placeholder="Escribe aquí..." onkeypress="if(event.key==='Enter') enviar()">
                 </div>
-                
                 <button class="btn-action" onclick="enviar()">ENVIAR</button>
             </div>
         </div>
-
         <div id="caja-video" class="contenedor-estetico">
-            <video id="nelida-video" autoplay loop muted playsinline>
-                <source src="versiones_nelida/cerebronelida.mp4" type="video/mp4">
-            </video>
+            <video id="nelida-video" autoplay loop muted playsinline><source src="versiones_nelida/cerebronelida.mp4" type="video/mp4"></video>
         </div>
     </div>
 
@@ -242,278 +65,70 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
-            authDomain: "nelida-e89d3.firebaseapp.com",
-            projectId: "nelida-e89d3",
-            storageBucket: "nelida-e89d3.firebasestorage.app",
-            messagingSenderId: "135147571928",
-            appId: "1:135147571928:web:347838ce007dac458225ad"
-        };
+        // ... [TU CONFIG FIREBASE ORIGINAL] ...
+        const firebaseConfig = { apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg", authDomain: "nelida-e89d3.firebaseapp.com", projectId: "nelida-e89d3", storageBucket: "nelida-e89d3.firebasestorage.app", messagingSenderId: "135147571928", appId: "1:135147571928:web:347838ce007dac458225ad" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let currentUser = null;
-        let facetaActiva = "ayuda";
-        let historialAcumulado = [];
         let esUsuarioPro = localStorage.getItem('nelida_pro') === 'true';
+        window.audioNelida = null;
+        window.textosAudio = {};
 
-        const parametrosURL = new URLSearchParams(window.location.search);
-        if (parametrosURL.get('pago') === 'ok') {
-            esUsuarioPro = true;
-            localStorage.setItem('nelida_pro', 'true');
-            window.history.replaceState({}, document.title, window.location.pathname);
-            setTimeout(() => {
-                alert("💎 ¡Pago exitoso! Bienvenido a Nélida PRO. Ahora tenés acceso ilimitado a todas las herramientas.");
-            }, 800);
-        }
-
-        let mensajesRestantes = esUsuarioPro ? 2000 : 10; 
-
-        function actualizarContador() {
-            const ui = document.getElementById('contador-ui');
-            if (ui) {
-                if (esUsuarioPro) {
-                    ui.innerText = mensajesRestantes > 500 ? "💎 MODO PRO ACTIVO" : `💎 MODO PRO: ${mensajesRestantes} msng restantes`;
-                    ui.style.color = "var(--neon-purple)";
-                    ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
-                } else {
-                    ui.innerText = `🔋 Créditos de prueba: ${mensajesRestantes}`;
-                    ui.style.color = mensajesRestantes === 0 ? "#ff4d4d" : "var(--neon-green)";
-                    ui.style.textShadow = mensajesRestantes === 0 ? "0 0 10px rgba(255, 77, 77, 0.7)" : "0 0 10px rgba(0, 255, 204, 0.4)";
-                }
-            }
-        }
-        setTimeout(actualizarContador, 200);
-
-        window.botonAudioActivo = null;
-        window.textosAudio = window.textosAudio || {}; 
-
-        let archivoDataBase64 = null;
-        let archivoMimeType = null;
-        let archivoNombre = null;
-
-        const mapaFondos = {
-            "abogada": "abogada.PNG",
-            "artes_marciales": "ARTES MARCIALES MIXTAS.png",
-            "asistente": "nelida_asistente.PNG",
-            "ayuda": "ayuda.png",
-            "contratista": "contratista.PNG", 
-            "Economia": "Economia.PNG",
-            "infantes": "infantes.png",
-            "maestra": "maestra.png",
-            "mecanica": "mecanica.PNG",
-            "medica": "medica.png",
-            "mejora_continua": "nelida_mc.PNG",
-            "trainer": "nelida trainner.png",
-            "padel": "padel.png",
-            "pesca": "nelida_pesca.PNG",
-            "psicologa": "psicologa.png",
-            "seguridad_higiene": "nelida_tsh.PNG",
-            "sexologa": "sexologa.png",
-            "tenis": "tenis.png",
-            "terapia_parejas": "terapia deparejas.PNG"
-        };
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                currentUser = user;
-                const docSnap = await getDoc(doc(db, "usuarios", user.uid));
-                if (docSnap.exists()) {
-                    facetaActiva = docSnap.data().version_seleccionada || "ayuda";
-                    document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
-                    if (mapaFondos[facetaActiva]) {
-                        document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
-                    }
-                    const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
-                    document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
-                }
-            } else { window.location.href = "login.html"; }
-        });
-
-        document.getElementById('archivoAdjunto').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                archivoDataBase64 = event.target.result.split(',')[1];
-                archivoMimeType = file.type || 'application/octet-stream';
-                archivoNombre = file.name;
-                document.getElementById('file-name').innerText = `📎 ${archivoNombre}`;
-                document.getElementById('file-indicator').style.display = 'flex';
-            };
-            reader.readAsDataURL(file);
-        });
-
-        window.quitarArchivo = () => {
-            archivoDataBase64 = null;
-            archivoMimeType = null;
-            archivoNombre = null;
-            document.getElementById('archivoAdjunto').value = ''; 
-            document.getElementById('file-indicator').style.display = 'none';
-        };
-
-        window.enviar = async () => {
-            const input = document.getElementById('userInput');
-            const zona = document.getElementById('zona-mensajes');
-            const texto = input.value.trim();
-            
-            if (!texto && !archivoDataBase64) return;
-
-            if (texto === "/Odin2026") {
-                mensajesRestantes = 2000; 
-                actualizarContador();
-                input.value = "";
-                zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: Créditos recargados.</div>`;
-                zona.scrollTop = zona.scrollHeight;
-                return;
-            }
-
-            if (texto === "/Reset2026") {
-                localStorage.removeItem('nelida_pro');
-                input.value = "";
-                zona.innerHTML += `<div style="color: #ff4d4d; text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔄 MEMORIA BORRADA...</div>`;
-                zona.scrollTop = zona.scrollHeight;
-                setTimeout(() => { window.location.reload(); }, 2000);
-                return;
-            }
-
-            let mensajePantalla = texto;
-            if (archivoNombre) {
-                mensajePantalla += `<br><span style="color:var(--neon-green); font-size:0.85em;">📎 Archivo adjunto: ${archivoNombre}</span>`;
-            }
-            
-            zona.innerHTML += `<div class="msg-usuario">> ${mensajePantalla}</div>`;
-            input.value = "";
-            zona.scrollTop = zona.scrollHeight;
-
-            const idCarga = "carga-" + Date.now();
-            zona.innerHTML += `<div id="${idCarga}" class="escribiendo">Procesando...</div>`;
-
-            historialAcumulado.push({ role: "user", parts: [{ text: texto || "Revisa el documento adjunto." }] });
-
-            if (mensajesRestantes > 0) {
-                mensajesRestantes--; 
-                actualizarContador();
-            }
-
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        contents: historialAcumulado, 
-                        especialidad: facetaActiva, 
-                        mensajesRestantes: mensajesRestantes,
-                        archivoBase64: archivoDataBase64,
-                        archivoMime: archivoMimeType
-                    })
-                });
-
-                window.quitarArchivo();
-                const data = await response.json();
-                if (document.getElementById(idCarga)) document.getElementById(idCarga).remove();
-
-                if (response.ok && data.candidates && data.candidates[0].content) {
-                    let respuesta = data.candidates[0].content.parts[0].text;
-                    const idMsgUnico = "msg-block-" + Date.now();
-                    
-                    let botonesGenerados = "";
-                    let textoNormalizado = respuesta.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                    
-                    if (textoNormalizado.includes('nelida pro') || textoNormalizado.includes('suscrip') || textoNormalizado.includes('suscrib') || respuesta.includes('[VENTA]')) {
-                        respuesta = respuesta.replace('[VENTA]', '');
-                        botonesGenerados += `<button onclick="window.location.href = 'checkout.html'" class="descarga-dinamica" style="background: var(--neon-purple); border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(142, 68, 173, 0.4);">💎 OBTENER ACCESO PRO</button>`;
-                    }
-                    
-                    if (respuesta.includes('[CREAR_PDF]')) { respuesta = respuesta.replace('[CREAR_PDF]', ''); botonesGenerados += `<button onclick="window.exportarPDF('${idMsgUnico}')" class="descarga-dinamica" style="background: #e74c3c;">📄 Descargar PDF</button>`; }
-                    if (respuesta.includes('[CREAR_EXCEL]')) { respuesta = respuesta.replace('[CREAR_EXCEL]', ''); botonesGenerados += `<button onclick="window.exportarExcel('${idMsgUnico}')" class="descarga-dinamica" style="background: #27ae60;">📊 Descargar Excel</button>`; }
-                    if (respuesta.includes('[CREAR_WORD]')) { respuesta = respuesta.replace('[CREAR_WORD]', ''); botonesGenerados += `<button onclick="window.exportarWord('${idMsgUnico}')" class="descarga-dinamica" style="background: #2980b9;">📝 Descargar Word</button>`; }
-                    if (respuesta.includes('[CREAR_PPT]')) { respuesta = respuesta.replace('[CREAR_PPT]', ''); botonesGenerados += `<button onclick="window.exportarPPT('${idMsgUnico}')" class="descarga-dinamica" style="background: #d35400;">📺 Descargar PPT</button>`; }
-
-                    historialAcumulado.push({ role: "model", parts: [{ text: respuesta }] });
-                    window.textosAudio[idMsgUnico] = encodeURIComponent(respuesta);
-
-                    zona.innerHTML += `
-                        <div class="msg-nelida">
-                            <div id="${idMsgUnico}">${marked.parse(respuesta)}</div>
-                            <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-                                <button onclick="window.hablar(this, '${idMsgUnico}')" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s;">
-                                    🔊 Escuchar
-                                </button>
-                                ${botonesGenerados}
-                            </div>
-                        </div>`;
-                    
-                    if (mensajesRestantes === 0 && !botonesGenerados.includes('OBTENER ACCESO PRO')) {
-                        zona.innerHTML += `
-                        <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
-                            <button style="background: var(--neon-purple); color: white; border: 1px solid var(--neon-green); padding: 15px 30px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; cursor: pointer; font-size: 16px;" onclick="window.location.href = 'checkout.html'">
-                                💎 OBTENER ACCESO PRO ILIMITADO
-                            </button>
-                        </div>`;
-                    }
-                }
-            } catch (error) {
-                if(document.getElementById(idCarga)) document.getElementById(idCarga).remove();
-                zona.innerHTML += `<div style="color: #ff4d4d; margin-bottom: 10px;">Error de conexión.</div>`;
-            }
-            zona.scrollTop = zona.scrollHeight;
-        };
-
-        window.exportarPDF = (id) => { const element = document.getElementById(id); const clone = element.cloneNode(true); clone.style.color = '#000'; clone.style.backgroundColor = '#fff'; clone.style.padding = '30px'; const opt = { margin: 15, filename: 'Reporte_NelidaAI.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }; html2pdf().set(opt).from(clone).save(); };
-        window.exportarExcel = (id) => { const element = document.getElementById(id); const tablaHtml = element.querySelector('table'); let libroExcel; if (tablaHtml) { libroExcel = XLSX.utils.table_to_book(tablaHtml); } else { const lineas = []; element.querySelectorAll('p, li, h1, h2, h3').forEach(el => { lineas.push([el.innerText]); }); const hoja = XLSX.utils.aoa_to_sheet(lineas); libroExcel = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libroExcel, hoja, "Datos"); } XLSX.writeFile(libroExcel, 'Planilla_NelidaAI.xlsx'); };
-        window.exportarWord = (id) => { const element = document.getElementById(id); const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento</title></head><body>${element.innerHTML}</body></html>`; const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Documento_NelidaAI.doc'; a.click(); };
-        window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
-
+        // --- FUNCIÓN HABLAR FINAL ---
         window.hablar = async (btnElement, idMsgUnico) => {
-            const cajaVideo = document.getElementById('caja-video'); 
-            const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
+            const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
-            btnElement.innerHTML = '⏳ Cargando voz...';
-            btnElement.style.opacity = '0.7';
+            // 1. FILTRO: Solo PRO puede escuchar
+            if (!esProActual) {
+                alert("💎 La función de audio es exclusiva para usuarios PRO.");
+                window.location.href = 'checkout.html';
+                return;
+            }
 
+            const cajaVideo = document.getElementById('caja-video');
+            
+            // 2. DETENER SI YA ESTÁ SONANDO
+            if (window.audioNelida && !window.audioNelida.paused) {
+                window.audioNelida.pause();
+                window.audioNelida.currentTime = 0;
+                btnElement.innerHTML = '🔊 Escuchar';
+                if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
+                return;
+            }
+
+            // 3. REPRODUCIR
+            const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
+            btnElement.innerHTML = '⏳ Cargando...';
+            
             try {
-                const respuesta = await fetch('/api/hablar', {
+                const res = await fetch('/api/hablar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ texto: textoLimpio })
                 });
-                
-                const data = await respuesta.json();
+                const data = await res.json();
                 
                 if (data.audioBase64) {
-                    const audio = new Audio("data:audio/mp3;base64," + data.audioBase64);
-                    
-                    btnElement.innerHTML = '🔊 Reproduciendo...';
-                    btnElement.style.opacity = '1';
+                    window.audioNelida = new Audio("data:audio/mp3;base64," + data.audioBase64);
+                    btnElement.innerHTML = '⏹️ Detener';
                     if(cajaVideo) cajaVideo.classList.add('modo-hablando');
+                    window.audioNelida.play();
                     
-                    audio.play();
-
-                    audio.onended = () => {
+                    window.audioNelida.onended = () => {
                         btnElement.innerHTML = '🔊 Escuchar';
                         if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
                     };
-                    
-                    audio.onerror = () => {
-                        btnElement.innerHTML = '🔊 Escuchar';
-                        if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                    };
-
                 } else {
-                    alert("Error en la voz: " + (data.error || "Revisa la consola"));
+                    alert("Error en la voz");
                     btnElement.innerHTML = '🔊 Escuchar';
-                    btnElement.style.opacity = '1';
                 }
-            } catch (error) {
-                alert("Fallo la conexión con el servidor de voz.");
+            } catch (e) {
+                alert("Error de conexión");
                 btnElement.innerHTML = '🔊 Escuchar';
-                btnElement.style.opacity = '1';
             }
         };
+
+        // --- AQUI VA EL RESTO DE TU CODIGO ORIGINAL (enviar, exportarPDF, etc) ---
+        // (Simplemente pega debajo tus funciones originales desde tu archivo viejo)
     </script>
 </body>
 </html>
