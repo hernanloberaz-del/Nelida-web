@@ -469,51 +469,57 @@
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
 
         window.hablar = async (btnElement, idMsgUnico) => {
-            const cajaVideo = document.getElementById('caja-video'); 
-            const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
+            const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
-            btnElement.innerHTML = '⏳ Cargando voz...';
-            btnElement.style.opacity = '0.7';
+            // 1. FILTRO PRO
+            if (!esProActual) {
+                alert("💎 La función de audio es exclusiva para usuarios PRO.");
+                window.location.href = 'checkout.html';
+                return;
+            }
 
+            const cajaVideo = document.getElementById('caja-video');
+            
+            // 2. LÓGICA DE DETENER
+            if (window.audioNelida && !window.audioNelida.paused) {
+                window.audioNelida.pause();
+                window.audioNelida.currentTime = 0;
+                btnElement.innerHTML = '🔊 Escuchar';
+                if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
+                return;
+            }
+
+            // 3. REPRODUCIR
+            const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
+            btnElement.innerHTML = '⏳ Cargando...';
+            
             try {
-                const respuesta = await fetch('/api/hablar', {
+                const res = await fetch('/api/hablar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ texto: textoLimpio })
                 });
-                
-                const data = await respuesta.json();
+                const data = await res.json();
                 
                 if (data.audioBase64) {
-                    const audio = new Audio("data:audio/mp3;base64," + data.audioBase64);
-                    
-                    btnElement.innerHTML = '🔊 Reproduciendo...';
-                    btnElement.style.opacity = '1';
+                    window.audioNelida = new Audio("data:audio/mp3;base64," + data.audioBase64);
+                    btnElement.innerHTML = '⏹️ Detener';
                     if(cajaVideo) cajaVideo.classList.add('modo-hablando');
+                    window.audioNelida.play();
                     
-                    audio.play();
-
-                    audio.onended = () => {
+                    window.audioNelida.onended = () => {
                         btnElement.innerHTML = '🔊 Escuchar';
                         if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
                     };
-                    
-                    audio.onerror = () => {
-                        btnElement.innerHTML = '🔊 Escuchar';
-                        if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                    };
-
                 } else {
-                    alert("Error en la voz: " + (data.error || "Revisa la consola"));
+                    alert("Error en la voz");
                     btnElement.innerHTML = '🔊 Escuchar';
-                    btnElement.style.opacity = '1';
                 }
-            } catch (error) {
-                alert("Fallo la conexión con el servidor de voz.");
+            } catch (e) {
+                alert("Error de conexión");
                 btnElement.innerHTML = '🔊 Escuchar';
-                btnElement.style.opacity = '1';
             }
-        };
+            };
     </script>
 </body>
 </html>
