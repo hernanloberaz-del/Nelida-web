@@ -12,14 +12,14 @@ export default async function handler(req, res) {
         let { contents, especialidad, mensajesRestantes, archivoBase64, archivoMime } = req.body;
         mensajesRestantes = Number(mensajesRestantes);
 
-        // Diccionario actualizado y optimizado con las facetas de Nélida
+        // NUEVO: Diccionario actualizado con las 5 nuevas facetas
         const roles = {
             "abogada": "NELIDA ABOGADA. Leyes, contratos, asesoría legal y litigios.",
             "artes_marciales": "NELIDA MMA. Estrategia de combate, técnica y defensa personal.",
             "asistente": "NELIDA ASISTENTE PERSONAL. Organización de agenda, gestión de tareas y productividad.",
             "ayuda": "NELIDA CRUZ ROJA. Supervivencia, primeros auxilios y gestión de catástrofes.",
             "contratista": "NELIDA CONTRATISTA. Mantenimiento industrial, obras y techos.",
-            "economia": "NELIDA ECONOMISTA. ARCA, impuestos y planificación financiera.",
+            "Economia": "NELIDA ECONOMISTA. ARCA, impuestos y planificación financiera.",
             "infantes": "NELIDA MAESTRA INFANTIL. Cuentos, desarrollo y educación infantil.",
             "maestra": "NELIDA MAESTRA. Tareas escolares, matemática, física y química.",
             "mejora_continua": "NELIDA MEJORA CONTINUA. Procesos industriales, Lean Manufacturing, 5S y KPIs.",
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
             "terapia_parejas": "NELIDA TERAPEUTA DE PAREJAS. Vínculos, comunicación y amor."
         };
 
-        const instruccionEspecializada = roles[especialidad?.toLowerCase()] || "NELIDA. Asistente profesional.";
+        const instruccionEspecializada = roles[especialidad] || "NELIDA. Asistente profesional.";
 
         let textoInstruccion = "";
 
@@ -77,8 +77,7 @@ export default async function handler(req, res) {
             generationConfig: { temperature: 0.7, topP: 0.8, topK: 40, maxOutputTokens: 8192 }
         };
 
-        // URL CORREGIDA: Llamando al modelo estable gemini-2.0-flash
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bodyPayload)
