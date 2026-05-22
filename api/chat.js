@@ -12,7 +12,7 @@ export default async function handler(req, res) {
         let { contents, especialidad, mensajesRestantes, archivoBase64, archivoMime } = req.body;
         mensajesRestantes = Number(mensajesRestantes);
 
-        // Diccionario con las facetas alineado en minúsculas para evitar fallos de tipeo
+        // Diccionario optimizado con las facetas de Nélida (todo en minúsculas para evitar errores)
         const roles = {
             "abogada": "NELIDA ABOGADA. Leyes, contratos, asesoría legal y litigios.",
             "artes_marciales": "NELIDA MMA. Estrategia de combate, técnica y defensa personal.",
@@ -34,7 +34,6 @@ export default async function handler(req, res) {
             "terapia_parejas": "NELIDA TERAPEUTA DE PAREJAS. Vínculos, comunicación y amor."
         };
 
-        // Controlamos que la especialidad entre limpia y en minúsculas
         const especialidadLimpia = especialidad ? especialidad.toLowerCase() : "ayuda";
         const instruccionEspecializada = roles[especialidadLimpia] || "NELIDA. Asistente profesional.";
 
@@ -79,8 +78,8 @@ export default async function handler(req, res) {
             generationConfig: { temperature: 0.7, topP: 0.8, topK: 40, maxOutputTokens: 8192 }
         };
 
-        // URL CORREGIDA Y ESTABLE: Usamos gemini-2.0-flash para producción
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
+        // URL ACTUALIZADA A LA VERSIÓN 2.5 FLASH
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bodyPayload)
