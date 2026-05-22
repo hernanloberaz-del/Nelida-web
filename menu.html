@@ -8,7 +8,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -29,24 +29,31 @@
             if (user) { 
                 usuarioActual = user; 
                 
+                // --- BLOQUE DE SEGURIDAD PRO ---
+                try {
+                    const docRef = doc(db, "usuarios", user.uid);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        const esProReal = data.plan === 'PRO' || data.esUsuarioPro === true;
+                        localStorage.setItem('nelida_plan', esProReal ? 'PRO' : 'FREE');
+                    }
+                } catch (e) { console.error("Error validando estado:", e); }
+
+                // --- PROCESAMIENTO DE PAGO POR URL ---
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('pago') === 'ok') {
                     try {
                         await updateDoc(doc(db, "usuarios", user.uid), { plan: "PRO" });
                         localStorage.setItem('nelida_plan', 'PRO');
-                        console.log("¡Plan PRO activado con éxito para el usuario!");
                         window.history.replaceState({}, document.title, window.location.pathname);
-                    } catch (error) {
-                        console.error("Error al activar el plan PRO en Firebase:", error);
-                    }
+                    } catch (error) { console.error("Error al activar:", error); }
                 }
-            } 
-            else { 
+            } else { 
                 window.location.href = "login.html"; 
             }
         });
 
-        // LISTA ORDENADA ALFABÉTICAMENTE CON LAS 5 NUEVAS INCORPORACIONES
         const facetas = [
             { id: "abogada", nombre: "Abogada", desc: "Asesoría Legal y Contratos", img: "versiones_nelida/abogada.PNG" },
             { id: "artes_marciales", nombre: "Artes Marciales", desc: "Disciplina y fuerza", img: "versiones_nelida/ARTES MARCIALES MIXTAS.png" },
@@ -70,7 +77,6 @@
         ];
 
         let indiceActual = 0;
-
         window.cambiarFaceta = (dir) => {
             indiceActual += dir;
             if (indiceActual < 0) indiceActual = facetas.length - 1;
@@ -80,8 +86,7 @@
 
         function actualizarUI() {
             const f = facetas[indiceActual];
-            const imgElement = document.getElementById('img-ruleta');
-            imgElement.src = f.img; 
+            document.getElementById('img-ruleta').src = f.img; 
             document.getElementById('nombre-faceta').innerText = f.nombre.toUpperCase();
             document.getElementById('desc-faceta').innerText = f.desc;
         }
@@ -89,160 +94,29 @@
         window.seleccionarYEntrar = async () => {
             if (!usuarioActual) return;
             const seleccionada = facetas[indiceActual].id;
+            const btn = document.querySelector('.btn-confirmar');
+            btn.innerText = "CARGANDO...";
             try {
-                // Cambia texto botón para dar feedback visual
-                document.querySelector('.btn-confirmar').innerText = "CARGANDO...";
-                await updateDoc(doc(db, "usuarios", usuarioActual.uid), {
-                    version_seleccionada: seleccionada
-                });
+                await updateDoc(doc(db, "usuarios", usuarioActual.uid), { version_seleccionada: seleccionada });
                 window.location.href = "interaccion.html"; 
-            } catch (e) { 
-                console.error("Error:", e);
-                document.querySelector('.btn-confirmar').innerText = "ERROR, REINTENTAR";
-            }
+            } catch (e) { btn.innerText = "ERROR, REINTENTAR"; }
         };
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Segoe+UI&display=swap');
-
-        :root {
-            --neon-green: #00ffcc;
-            --neon-purple: #8e44ad;
-            --glass-bg: rgba(0, 0, 0, 0.6);
-            --glass-border: rgba(0, 255, 204, 0.3);
-        }
-
+        :root { --neon-green: #00ffcc; --neon-purple: #8e44ad; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body { 
-            background-color: #050505;
-            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
-            color: white; 
-            font-family: 'Segoe UI', sans-serif; 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden; 
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--neon-green);
-            text-shadow: 0 0 15px rgba(0,255,204,0.5);
-            margin-bottom: 30px;
-            font-size: 2.2em;
-            letter-spacing: 3px;
-        }
-
-        /* Ruleta más grande */
-        .ruleta-container { 
-            position: relative; 
-            width: 380px; 
-            height: 520px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            perspective: 1000px;
-        }
-
-        .img-principal { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            border-radius: 20px; 
-            border: 1px solid var(--glass-border); 
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.15);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .img-principal:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 40px rgba(0, 255, 204, 0.3);
-        }
-
-        .flecha { 
-            position: absolute; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            background: rgba(0, 0, 0, 0.5); 
-            border: 1px solid var(--glass-border); 
-            color: var(--neon-green); 
-            font-size: 28px; 
-            cursor: pointer; 
-            border-radius: 50%; 
-            width: 55px;
-            height: 55px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10; 
-            backdrop-filter: blur(5px);
-            transition: 0.3s;
-        }
-
-        .flecha:hover {
-            background: var(--neon-green);
-            color: black;
-            box-shadow: 0 0 15px var(--neon-green);
-        }
-
-        .flecha-izq { left: -70px; }
-        .flecha-der { right: -70px; }
-
-        .info-faceta { 
-            text-align: center; 
-            margin-top: 30px; 
-            height: 80px; 
-        }
-
-        #nombre-faceta {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.5em;
-            letter-spacing: 2px;
-            color: #fff;
-        }
-
-        #desc-faceta {
-            color: var(--neon-purple);
-            font-weight: bold;
-            margin-top: 8px;
-            font-size: 1.05em;
-            letter-spacing: 1px;
-            text-shadow: 0 0 5px rgba(142, 68, 173, 0.5);
-        }
-
-        .btn-confirmar { 
-            margin-top: 20px; 
-            background: var(--neon-purple); 
-            color: white; 
-            border: 1px solid var(--neon-purple); 
-            padding: 15px 50px; 
-            border-radius: 30px; 
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold; 
-            font-size: 1.1em;
-            cursor: pointer; 
-            box-shadow: 0 0 20px rgba(142, 68, 173, 0.4);
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .btn-confirmar:hover {
-            background: transparent;
-            color: var(--neon-purple);
-            box-shadow: 0 0 30px rgba(142, 68, 173, 0.8);
-        }
-
-        /* Responsive para que no se rompa en celulares chicos */
-        @media (max-width: 550px) {
-            .ruleta-container { width: 280px; height: 400px; }
-            .flecha-izq { left: -20px; }
-            .flecha-der { right: -20px; }
-        }
+        body { background-color: #050505; background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%); color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); margin-bottom: 30px; font-size: 2.2em; letter-spacing: 3px; }
+        .ruleta-container { position: relative; width: 380px; height: 520px; display: flex; align-items: center; justify-content: center; }
+        .img-principal { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; border: 1px solid rgba(0, 255, 204, 0.3); }
+        .flecha { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 255, 204, 0.3); color: var(--neon-green); font-size: 28px; cursor: pointer; border-radius: 50%; width: 55px; height: 55px; z-index: 10; }
+        .flecha-izq { left: -70px; } .flecha-der { right: -70px; }
+        .info-faceta { text-align: center; margin-top: 30px; }
+        #nombre-faceta { font-family: 'Orbitron'; font-size: 1.5em; }
+        #desc-faceta { color: var(--neon-purple); font-weight: bold; margin-top: 8px; }
+        .btn-confirmar { margin-top: 20px; background: var(--neon-purple); color: white; padding: 15px 50px; border-radius: 30px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; border: none; }
     </style>
 </head>
 <body>
