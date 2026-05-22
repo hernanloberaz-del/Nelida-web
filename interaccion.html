@@ -373,6 +373,31 @@
             document.getElementById('file-indicator').style.display = 'none';
         };
 
+        // NUEVA FUNCIÓN: Envía el texto a Vercel para procesarlo con OpenAI y reproduce el audio
+        async function reproducirVozNelida(texto) {
+            try {
+                // Previene que Nélida hable si se está procesando un error o comandos ocultos
+                if (texto.includes('Error') || texto.includes('Reset') || texto.includes('🔓')) return;
+                
+                const respuesta = await fetch('/api/hablar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: texto })
+                });
+                
+                const data = await respuesta.json();
+                
+                if (data.audioBase64) {
+                    const audio = new Audio("data:audio/mp3;base64," + data.audioBase64);
+                    audio.play();
+                } else {
+                    console.error("Error obteniendo el audio de OpenAI:", data.error);
+                }
+            } catch (error) {
+                console.error("No se pudo conectar con el sistema de voz en Vercel:", error);
+            }
+        }
+
         window.enviar = async () => {
             const input = document.getElementById('userInput');
             const zona = document.getElementById('zona-mensajes');
@@ -464,6 +489,11 @@
                                 ${botonesGenerados}
                             </div>
                         </div>`;
+                    
+                    // ACÁ ESTÁ LA MAGIA: Cuando Nélida responde, llamamos a la API de voz.
+                    // Limpiamos la respuesta de caracteres raros o de formato antes de mandarla a leer.
+                    const textoParaLeer = respuesta.replace(/\*\*/g, '').replace(/_/g, '').replace(/#/g, '');
+                    reproducirVozNelida(textoParaLeer);
                     
                     setTimeout(() => {
                         const btn = zona.querySelector(`button[onclick*="${idMsgUnico}"]`);
