@@ -469,9 +469,10 @@
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
 
         window.hablar = async (btnElement, idMsgUnico) => {
+            // FORZAMOS LECTURA DEL ESTADO REAL DEL NAVEGADOR
             const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
-            // 1. FILTRO PRO
+            // Si no está en modo dios (PRO), bloqueamos
             if (!esProActual) {
                 alert("💎 La función de audio es exclusiva para usuarios PRO.");
                 window.location.href = 'checkout.html';
@@ -480,7 +481,7 @@
 
             const cajaVideo = document.getElementById('caja-video');
             
-            // 2. LÓGICA DE DETENER
+            // DETENER: Si el audio ya está sonando, lo frenamos
             if (window.audioNelida && !window.audioNelida.paused) {
                 window.audioNelida.pause();
                 window.audioNelida.currentTime = 0;
@@ -489,9 +490,9 @@
                 return;
             }
 
-            // 3. REPRODUCIR
+            // REPRODUCIR
             const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
-            btnElement.innerHTML = '⏳ Cargando...';
+            btnElement.innerHTML = '⏳ Cargando voz...';
             
             try {
                 const res = await fetch('/api/hablar', {
@@ -519,7 +520,7 @@
                 alert("Error de conexión");
                 btnElement.innerHTML = '🔊 Escuchar';
             }
-            };
+        };
     </script>
 </body>
 </html>
