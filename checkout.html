@@ -296,36 +296,10 @@
                 });
             },
             onApprove: function(data, actions) {
-                window.location.href = 'menu.html?pago=ok';
+                // ACA ESTÁ EL CAMBIO DE SEGURIDAD PARA PAYPAL
+                window.location.href = 'menu.html?validar=NelidaAI_Pro_Suscripcion_Segura_2026_X';
             }
         }).render('#paypal-button-container-P-1KW822034C763352DNIGHICQ');
-    </script>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
-            authDomain: "nelida-e89d3.firebaseapp.com",
-            projectId: "nelida-e89d3",
-            storageBucket: "nelida-e89d3.firebasestorage.app",
-            messagingSenderId: "135147571928",
-            appId: "1:135147571928:web:347838ce007dac458225ad"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        // Esto detecta al usuario logueado e inyecta su ID en el botón
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const btnMP = document.querySelector('.btn-mp-link');
-                const linkOriginal = "https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=498087b7b10645b79fb5b314ac870bd8";
-                
-                // Le agregamos el parametro external_reference con el ID de Firebase
-                btnMP.href = linkOriginal + "&external_reference=" + user.uid;
-            }
-        });
     </script>
 </body>
 </html>
