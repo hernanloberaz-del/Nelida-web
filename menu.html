@@ -31,8 +31,8 @@
                 
                 // --- PROCESAMIENTO DE PAGO POR URL (¡EL ATAJO MÁGICO!) ---
                 const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('pago') === 'ok') {
-                    try {
+                if (urlParams.get('status') === 'approved' || urlParams.get('validar') === 'NelidaAI_Pro_Suscripcion_Segura_2026_X') {
+                try {
                         // 1. Actualiza a PRO en Firebase
                         await updateDoc(doc(db, "usuarios", user.uid), { plan: "PRO" });
                         
