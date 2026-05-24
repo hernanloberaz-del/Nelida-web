@@ -29,27 +29,28 @@
             if (user) { 
                 usuarioActual = user; 
                 
-                // --- PROCESAMIENTO DE PAGO POR URL (¡EL ATAJO MÁGICO!) ---
+                // --- PROCESAMIENTO DE PAGO BLINDADO CON CLAVE SECRETA ---
                 const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('status') === 'approved' || urlParams.get('validar') === 'NelidaAI_Pro_Suscripcion_Segura_2026_X') {
-                try {
-                        // 1. Actualiza a PRO en Firebase
+                if (urlParams.get('validar') === 'NelidaAI_Pro_Suscripcion_Segura_2026_X') {
+                    try {
+                        // 1. Actualiza a PRO en tu base de datos Firebase
                         await updateDoc(doc(db, "usuarios", user.uid), { plan: "PRO" });
                         
-                        // 2. Actualiza la memoria local
+                        // 2. Guarda el estado en la memoria del navegador
                         localStorage.setItem('nelida_plan', 'PRO');
                         
-                        // 3. Borra el ?pago=ok de la barra para que no se vea
+                        // 3. Borra la clave secreta de la barra al instante para que sea invisible
                         window.history.replaceState({}, document.title, window.location.pathname);
                         
-                        // 4. Te avisa que funcionó
+                        // 4. Cartel de confirmación al usuario
                         alert("¡Pago exitoso! Ya tenés Nélida PRO activado.");
+                        window.location.reload();
                     } catch (error) { 
-                        console.error("Error al activar:", error); 
+                        console.error("Error al activar el plan PRO:", error); 
                     }
                 }
 
-                // --- BLOQUE DE SEGURIDAD PRO ---
+                // --- BLOQUE DE SEGURIDAD INTERNA ---
                 try {
                     const docRef = doc(db, "usuarios", user.uid);
                     const docSnap = await getDoc(docRef);
