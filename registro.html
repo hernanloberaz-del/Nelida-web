@@ -8,7 +8,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        // CAMBIO: Importamos serverTimestamp
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -52,7 +53,9 @@
                     pais: paisDetectado,
                     edad: 0,
                     version_seleccionada: "Pendiente",
-                    ultimoLogin: new Date()
+                    // CAMBIO: Agregamos las fechas correctas para el panel
+                    fecha_registro: serverTimestamp(),
+                    ultimo_acceso: serverTimestamp()
                 }, { merge: true });
 
                 console.log("Perfil guardado con éxito.");
