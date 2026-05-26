@@ -8,8 +8,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        // Agregamos "increment" al final de esta importación para poder contar
-        import { getFirestore, doc, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        // CAMBIO: Importamos serverTimestamp para guardar la fecha exacta del servidor
+        import { getFirestore, doc, setDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -27,10 +27,8 @@
         const googleProvider = new GoogleAuthProvider();
         const facebookProvider = new FacebookAuthProvider();
 
-        // --- FUNCIÓN INVISIBLE DEL CONTADOR DE VISITAS ---
         const contarVisita = async () => {
             try {
-                // Guarda las visitas en la colección "analitica", dentro del documento "visitas"
                 await setDoc(doc(db, "analitica", "visitas"), {
                     total: increment(1)
                 }, { merge: true });
@@ -39,15 +37,16 @@
             }
         };
 
-        // Se ejecuta automáticamente apenas la persona carga la página o la App
         contarVisita();
-        // ------------------------------------------------
 
+        // CAMBIO: Actualizamos esta función para que guarde la fecha del servidor y asegure los campos básicos
         const actualizarUltimoLogin = async (user) => {
             try {
                 await setDoc(doc(db, "usuarios", user.uid), {
-                    ultimoLogin: new Date()
-                }, { merge: true });
+                    email: user.email || "Usuario sin email", // Por si entra con Facebook sin correo público
+                    fecha_registro: serverTimestamp(), // Guarda la fecha y hora exacta
+                    ultimo_acceso: serverTimestamp() // Lo duplicamos por si acaso
+                }, { merge: true }); // El merge hace que no se borren sus créditos o faceta elegida
             } catch (error) { console.error("Error al actualizar login:", error); }
         };
 
@@ -73,14 +72,11 @@
             
             if(!email || !pass) return alert("Por favor, completa los campos.");
             
-            // --- BLOQUE DE ACCESO A PANEL DE CONTROL (ADMIN) ---
             if (email === "NELIDA.AR" && pass === "/Odin2026") {
-                // Seteamos el token de seguridad local para que control.html te deje entrar
                 localStorage.setItem('admin_autorizado', 'true');
                 window.location.href = "control.html";
-                return; // Cortamos la función acá para que no intente loguearse en Firebase
+                return;
             }
-            // ----------------------------------------------------
 
             try {
                 const result = await signInWithEmailAndPassword(auth, email, pass);
