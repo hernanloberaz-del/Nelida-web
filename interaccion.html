@@ -364,8 +364,8 @@
 
             if (texto === "/Odin2026") {
                 mensajesRestantes = 2000; 
-                esUsuarioPro = true; // <--- ESTO ES LO NUEVO
-                localStorage.setItem('nelida_pro', 'true'); // <--- ESTO ES LO NUEVO
+                esUsuarioPro = true;
+                localStorage.setItem('nelida_pro', 'true');
                 actualizarContador();
                 input.value = "";
                 zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: MODO DIOS ACTIVADO.</div>`;
@@ -470,7 +470,7 @@
         window.exportarWord = (id) => { const element = document.getElementById(id); const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento</title></head><body>${element.innerHTML}</body></html>`; const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Documento_NelidaAI.doc'; a.click(); };
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
 
-       window.hablar = async (btnElement, idMsgUnico) => {
+        window.hablar = async (btnElement, idMsgUnico) => {
             // 1. FORZAMOS LECTURA DEL ESTADO REAL
             const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
@@ -501,21 +501,25 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ texto: textoLimpio })
                 });
-                const data = await res.json();
                 
-                if (data.audioBase64) {
-                    window.audioNelida = new Audio("data:audio/mp3;base64," + data.audioBase64);
+                if (res.ok) {
+                    // RECIBIMOS EL ARCHIVO CRUDO DIRECTO (Streaming Binario)
+                    const blob = await res.blob();
+                    const audioUrl = URL.createObjectURL(blob);
+                    
+                    window.audioNelida = new Audio(audioUrl);
                     btnElement.innerHTML = '⏹️ Detener';
                     if(cajaVideo) cajaVideo.classList.add('modo-hablando');
+                    
                     window.audioNelida.play();
                     
                     window.audioNelida.onended = () => {
                         btnElement.innerHTML = '🔊 Escuchar';
                         if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
+                        URL.revokeObjectURL(audioUrl); // Limpiamos la memoria del navegador
                     };
                 } else {
-                    alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
-                    btnElement.innerHTML = '🔊 Escuchar';
+                    throw new Error("Error en el servidor de voz");
                 }
             } catch (e) {
                 alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
