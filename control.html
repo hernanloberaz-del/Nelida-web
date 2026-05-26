@@ -63,6 +63,13 @@
         .item-costo { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         .item-costo span:first-child { color: rgba(255, 255, 255, 0.6); }
         .item-costo span:last-child { font-weight: bold; font-family: 'Orbitron', sans-serif; }
+        
+        /* Efecto pulsante para nuevos usuarios en la tabla */
+        @keyframes pulseNew {
+            0% { background-color: rgba(0, 255, 204, 0.2); }
+            100% { background-color: transparent; }
+        }
+        .fila-nueva { animation: pulseNew 2s ease-out; }
     </style>
 </head>
 <body>
@@ -71,7 +78,10 @@
         
         <div class="header-admin">
             <h1>NELIDA-AI // <span>PANEL DE CONTROL</span></h1>
-            <button class="btn-logout" onclick="window.cerrarSesionAdmin()">CERRAR SESIÓN</button>
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <span id="estado-conexion" style="color: var(--neon-green); font-size: 12px; font-family: 'Orbitron';"><span style="display:inline-block; width:8px; height:8px; background:var(--neon-green); border-radius:50%; margin-right:5px; box-shadow: 0 0 8px var(--neon-green);"></span>EN VIVO</span>
+                <button class="btn-logout" onclick="window.cerrarSesionAdmin()">CERRAR SESIÓN</button>
+            </div>
         </div>
 
         <div class="grid-metricas">
@@ -88,18 +98,18 @@
                 <div id="metric-saldo-api" class="valor">$10.00</div>
             </div>
             <div class="card-metrica errores">
-                <h3>Estado de Plataforma</h3>
-                <div id="metric-errores-recientes" class="valor" style="color: var(--neon-green);">ONLINE</div>
+                <h3>Usuarios Totales</h3>
+                <div id="metric-usuarios-totales" class="valor" style="color: var(--neon-blue);">0</div>
             </div>
         </div>
 
         <div class="seccion-panel">
-            <h2>Resumen de Usuarios y Créditos Disponibles</h2>
+            <h2>Registro en Tiempo Real</h2>
             <div class="contenedor-tabla">
                 <table>
                     <thead>
                         <tr>
-                            <th>ID Usuario</th>
+                            <th>Fecha / Último Acceso</th>
                             <th>Email</th>
                             <th>Faceta Activa</th>
                             <th>Estado Plan</th>
@@ -108,7 +118,7 @@
                     </thead>
                     <tbody id="tabla-usuarios-body">
                         <tr>
-                            <td colspan="5" style="text-align: center; color: rgba(255,255,255,0.4);">Cargando base de datos de Firebase...</td>
+                            <td colspan="5" style="text-align: center; color: rgba(255,255,255,0.4);">Iniciando conexión con el núcleo de Nélida...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -116,7 +126,6 @@
         </div>
 
         <div class="analisis-costos">
-            
             <div class="seccion-panel">
                 <h2>Evaluación de Funcionamiento y Costos</h2>
                 <div class="item-costo">
@@ -160,14 +169,14 @@
                     </table>
                 </div>
             </div>
-
         </div>
 
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        // CAMBIO CLAVE AQUÍ: Importamos onSnapshot en lugar de getDocs
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         if (localStorage.getItem('admin_autorizado') !== 'true') {
             window.location.href = 'login.html';
@@ -190,90 +199,122 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        async function cargarDatosPanel() {
+        // Función para formatear fechas de forma legible
+        function formatearFecha(timestamp) {
+            if (!timestamp) return '<span style="color:#666">Fecha desconocida</span>';
+            // Si es un Timestamp de Firebase, lo convertimos a milisegundos
+            const millis = typeof timestamp.toMillis === 'function' ? timestamp.toMillis() : (typeof timestamp === 'number' ? timestamp : Date.parse(timestamp));
+            if (isNaN(millis)) return '<span style="color:#666">Fecha inválida</span>';
+            
+            const fecha = new Date(millis);
+            return fecha.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function iniciarRadarPanel() {
             try {
-                const snapshot = await getDocs(collection(db, "usuarios"));
                 const tabla = document.getElementById('tabla-usuarios-body');
-                tabla.innerHTML = '';
                 
-                let contPro = 0;
-                let consultasGeminiTotales = 0;
-                let caracteresOpenAITotales = 0;
+                // onSnapshot mantiene la conexión abierta y se actualiza solo cada vez que hay un cambio en la BD
+                onSnapshot(collection(db, "usuarios"), (snapshot) => {
+                    let usuariosArray = [];
+                    let contPro = 0;
+                    let consultasGeminiTotales = 0;
+                    let caracteresOpenAITotales = 0;
 
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    const uid = docSnap.id;
-                    
-                    const emailUser = data.email || "Ingreso Anónimo / Social";
-                    const faceta = data.version_seleccionada || "Ayuda";
-                    const creditos = data.mensajesRestantes !== undefined ? data.mensajesRestantes : 10;
-                    
-                    const esPro = creditos > 500;
-                    if(esPro) contPro++;
-                    
-                    // CALCULO DE CONSUMO DE MENSAJES INDIVIDUALES
-                    let mensajesConsumidos = 0;
-                    if (esPro) {
-                        mensajesConsumidos = 2000 - creditos;
-                    } else {
-                        mensajesConsumidos = 10 - creditos;
+                    // 1. Extraemos todos los datos al array
+                    snapshot.forEach((docSnap) => {
+                        let data = docSnap.data();
+                        data.uid = docSnap.id;
+                        usuariosArray.push(data);
+                    });
+
+                    // 2. ORDENAMOS EL ARRAY POR FECHA (El más nuevo arriba)
+                    // Buscamos cualquier campo que Nélida esté usando para guardar la fecha
+                    usuariosArray.sort((a, b) => {
+                        let tiempoA = a.fecha_registro || a.ultimo_acceso || a.timestamp || a.createdAt || 0;
+                        let tiempoB = b.fecha_registro || b.ultimo_acceso || b.timestamp || b.createdAt || 0;
+
+                        if (typeof tiempoA.toMillis === 'function') tiempoA = tiempoA.toMillis();
+                        if (typeof tiempoB.toMillis === 'function') tiempoB = tiempoB.toMillis();
+                        
+                        return tiempoB - tiempoA; // Orden descendente
+                    });
+
+                    // 3. Limpiamos y re-dibujamos la tabla
+                    tabla.innerHTML = '';
+
+                    if (usuariosArray.length === 0) {
+                        tabla.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.4);">La base de datos está vacía.</td></tr>`;
                     }
+
+                    usuariosArray.forEach((data, index) => {
+                        const emailUser = data.email || `<span style="color:#888;">Ingreso Anónimo / ID: ${data.uid.substring(0, 5)}</span>`;
+                        const faceta = data.version_seleccionada || "Ayuda General";
+                        const creditos = data.mensajesRestantes !== undefined ? data.mensajesRestantes : 10;
+                        
+                        const esPro = creditos > 500;
+                        if(esPro) contPro++;
+                        
+                        let mensajesConsumidos = esPro ? (2000 - creditos) : (10 - creditos);
+                        if (mensajesConsumidos < 0) mensajesConsumidos = 0;
+
+                        consultasGeminiTotales += mensajesConsumidos;
+
+                        if (esPro) {
+                            caracteresOpenAITotales += (mensajesConsumidos * 350);
+                        }
+                        
+                        const spanBadge = esPro ? `<span class="badge pro">PRO</span>` : `<span class="badge free">FREE</span>`;
+                        
+                        // Buscamos la fecha en los campos más comunes
+                        const campoFecha = data.fecha_registro || data.ultimo_acceso || data.timestamp || data.createdAt;
+
+                        const fila = document.createElement('tr');
+                        // Si es el primero de la lista, le damos un efectito
+                        if(index === 0) fila.className = "fila-nueva";
+                        
+                        fila.innerHTML = `
+                            <td style="font-family: monospace; color: var(--neon-blue);">${formatearFecha(campoFecha)}</td>
+                            <td>${emailUser}</td>
+                            <td style="text-transform: capitalize;">${faceta}</td>
+                            <td>${spanBadge}</td>
+                            <td style="font-weight: bold; color: var(--neon-green);">${creditos}</td>
+                        `;
+                        tabla.appendChild(fila);
+                    });
+
+                    // CÁLCULOS FINANCIEROS (Se actualizan en vivo también)
+                    const gastoGemini = consultasGeminiTotales * 0.000075;
+                    const gastoOpenAI = (caracteresOpenAITotales / 1000000) * 15.00;
+                    const costoTotalGlobal = gastoGemini + gastoOpenAI;
+                    const fondoInicialPrecompra = 10.00;
+                    const saldoRestanteAPI = fondoInicialPrecompra - costoTotalGlobal;
+
+                    document.getElementById('metric-usuarios-pro').innerText = contPro;
+                    document.getElementById('metric-usuarios-totales').innerText = usuariosArray.length;
+                    document.getElementById('metric-consumo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
+                    document.getElementById('metric-saldo-api').innerText = `$${saldoRestanteAPI.toFixed(2)} USD`;
                     
-                    // Corrección por si usaste el comando de recarga /Odin2026
-                    if (mensajesConsumidos < 0) mensajesConsumidos = 0;
-
-                    consultasGeminiTotales += mensajesConsumidos;
-
-                    // ESTIMACIÓN DE CARACTERES AUDIO (Asumiendo que los PRO interactúan con voz en promedio 350 caracteres por mensaje)
-                    if (esPro) {
-                        caracteresOpenAITotales += (mensajesConsumidos * 350);
-                    }
+                    document.getElementById('costo-consultas-gemini').innerText = consultasGeminiTotales;
+                    document.getElementById('costo-caracteres-openai').innerText = caracteresOpenAITotales;
                     
-                    const spanBadge = esPro ? `<span class="badge pro">PRO</span>` : `<span class="badge free">FREE</span>`;
+                    document.getElementById('gasto-gemini-usd').innerText = `$${gastoGemini.toFixed(4)} USD`;
+                    document.getElementById('gasto-openai-usd').innerText = `$${gastoOpenAI.toFixed(4)} USD`;
+                    document.getElementById('costo-operativo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
 
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = `
-                        <td style="font-family: monospace;">${uid.substring(0, 6)}...</td>
-                        <td>${emailUser}</td>
-                        <td style="text-transform: capitalize;">${faceta}</td>
-                        <td>${spanBadge}</td>
-                        <td style="font-weight: bold; color: var(--neon-green);">${creditos}</td>
-                    `;
-                    tabla.appendChild(fila);
+                }, (error) => {
+                    console.error("Error en el Radar de Firebase:", error);
+                    document.getElementById('tabla-usuarios-body').innerHTML = `<tr><td colspan="5" class="texto-error">Conexión interrumpida con la Base de Datos. ${error.message}</td></tr>`;
+                    document.getElementById('estado-conexion').innerHTML = `<span style="color:red;">OFFLINE</span>`;
                 });
 
-                // TARIFAS OFICIALES DE LAS APIS (Calculadas en USD)
-                // Gemini 1.5 Flash: ~$0.000075 USD por cada consulta promedio (entrada + salida)
-                const gastoGemini = consultasGeminiTotales * 0.000075;
-                
-                // OpenAI TTS Estándar: $15.00 USD por cada 1.000.000 de caracteres
-                const gastoOpenAI = (caracteresOpenAITotales / 1000000) * 15.00;
-                
-                const costoTotalGlobal = gastoGemini + gastoOpenAI;
-                
-                // Fondo inicial que le cargaste a tu consola de desarrollo (ej: $10 dólares de saldo prepago)
-                const fondoInicialPrecompra = 10.00;
-                const saldoRestanteAPI = fondoInicialPrecompra - costoTotalGlobal;
-
-                // ACTUALIZACIÓN DE MÉTRICAS EN INTERFAZ
-                document.getElementById('metric-usuarios-pro').innerText = contPro;
-                document.getElementById('metric-consumo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
-                document.getElementById('metric-saldo-api').innerText = `$${saldoRestanteAPI.toFixed(2)} USD`;
-                
-                document.getElementById('costo-consultas-gemini').innerText = consultasGeminiTotales;
-                document.getElementById('costo-caracteres-openai').innerText = caracteresOpenAITotales;
-                
-                document.getElementById('gasto-gemini-usd').innerText = `$${gastoGemini.toFixed(4)} USD`;
-                document.getElementById('gasto-openai-usd').innerText = `$${gastoOpenAI.toFixed(4)} USD`;
-                document.getElementById('costo-operativo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
-
             } catch (error) {
-                console.error("Error al cargar Firebase:", error);
-                document.getElementById('tabla-usuarios-body').innerHTML = `<tr><td colspan="5" class="texto-error">Hubo un fallo conectando con la Base de Datos. ${error.message}</td></tr>`;
+                console.error("Error al inicializar Panel:", error);
             }
         }
 
-        cargarDatosPanel();
+        // Arrancamos el radar
+        iniciarRadarPanel();
     </script>
 </body>
 </html>
