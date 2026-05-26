@@ -471,7 +471,6 @@
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
 
         window.hablar = async (btnElement, idMsgUnico) => {
-            // 1. FORZAMOS LECTURA DEL ESTADO REAL
             const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
             if (!esProActual) {
@@ -482,7 +481,6 @@
 
             const cajaVideo = document.getElementById('caja-video');
             
-            // 2. DETENER
             if (window.audioNelida && !window.audioNelida.paused) {
                 window.audioNelida.pause();
                 window.audioNelida.currentTime = 0;
@@ -491,7 +489,6 @@
                 return;
             }
 
-            // 3. REPRODUCIR
             const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
             btnElement.innerHTML = '⏳ Cargando voz...';
             
@@ -503,7 +500,16 @@
                 });
                 
                 if (res.ok) {
-                    // RECIBIMOS EL ARCHIVO CRUDO DIRECTO (Streaming Binario)
+                    const contentType = res.headers.get("content-type");
+                    
+                    // Si el servidor le sigue mandando el viejo formato JSON, lo detecta y te avisa:
+                    if (contentType && contentType.includes("application/json")) {
+                        alert("⚠️ DIAGNÓSTICO: El servidor sigue mandando JSON (Base64). Significa que el archivo '/api/hablar' no se actualizó correctamente con el código nuevo o Vercel todavía no lo desplegó.");
+                        btnElement.innerHTML = '🔊 Escuchar';
+                        return;
+                    }
+
+                    // Si llega hasta acá, el servidor está mandando el MP3 veloz correctamente
                     const blob = await res.blob();
                     const audioUrl = URL.createObjectURL(blob);
                     
@@ -516,13 +522,17 @@
                     window.audioNelida.onended = () => {
                         btnElement.innerHTML = '🔊 Escuchar';
                         if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                        URL.revokeObjectURL(audioUrl); // Limpiamos la memoria del navegador
+                        URL.revokeObjectURL(audioUrl); 
                     };
                 } else {
-                    throw new Error("Error en el servidor de voz");
+                    // Si falla el servidor de OpenAI, nos muestra el error real:
+                    const errorDelServidor = await res.text();
+                    alert("⚠️ ERROR EN EL SERVIDOR (Revisar logs):\n" + errorDelServidor);
+                    btnElement.innerHTML = '🔊 Escuchar';
                 }
             } catch (e) {
-                alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
+                // Si falla tu conexión a internet o el fetch:
+                alert("⚠️ ERROR DE CONEXIÓN:\nNo se pudo contactar al servidor. Detalles: " + e.message);
                 btnElement.innerHTML = '🔊 Escuchar';
             }
         };
