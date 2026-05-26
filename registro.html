@@ -2,14 +2,191 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nélida AI - Crear Cuenta</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NELIDA-AI - Panel de Control Global</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-green: #00ffcc;
+            --neon-purple: #8e44ad;
+            --neon-blue: #00d2ff;
+            --glass-bg: rgba(10, 10, 10, 0.9);
+            --glass-border: rgba(0, 255, 204, 0.15);
+            --bg-dark: #030303;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Segoe UI', sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            padding: 30px;
+        }
+
+        h1, h2, h3, .panel-title { font-family: 'Orbitron', sans-serif; letter-spacing: 2px; }
+
+        .header-admin { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); padding-bottom: 20px; margin-bottom: 30px; }
+        .header-admin h1 { font-size: 24px; color: #fff; text-shadow: 0 0 15px rgba(0, 255, 204, 0.3); }
+        .header-admin h1 span { color: var(--neon-green); }
+
+        .btn-logout { background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 12px; transition: 0.3s; }
+        .btn-logout:hover { background: #ff4d4d; color: #fff; box-shadow: 0 0 15px rgba(255, 77, 77, 0.4); }
+
+        .grid-metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card-metrica { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 255, 204, 0.02); transition: transform 0.3s; }
+        .card-metrica:hover { transform: translateY(-3px); }
+        .card-metrica h3 { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 10px; text-transform: uppercase; }
+        .card-metrica .valor { font-size: 28px; font-weight: bold; font-family: 'Orbitron', sans-serif; }
+        .card-metrica.pro .valor { color: var(--neon-purple); text-shadow: 0 0 10px rgba(142, 68, 173, 0.4); }
+        .card-metrica.consumo .valor { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
+        .card-metrica.creditos .valor { color: var(--neon-green); text-shadow: 0 0 10px rgba(0, 255, 204, 0.4); }
+        .card-metrica.errores .valor { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
+
+        .seccion-panel { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); }
+        .seccion-panel h2 { font-size: 18px; margin-bottom: 20px; color: #fff; border-left: 4px solid var(--neon-blue); padding-left: 12px; }
+
+        .contenedor-tabla { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+        th { background: rgba(0, 255, 204, 0.05); color: var(--neon-green); font-family: 'Orbitron', sans-serif; font-size: 11px; letter-spacing: 1px; padding: 14px; border-bottom: 1px solid rgba(0, 255, 204, 0.2); text-transform: uppercase; }
+        td { padding: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.9); }
+        tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; font-family: 'Orbitron', sans-serif; }
+        .badge.pro { background: rgba(142, 68, 173, 0.2); color: #be7bdf; border: 1px solid var(--neon-purple); }
+        .badge.free { background: rgba(255, 255, 255, 0.05); color: #aaa; border: 1px solid #555; }
+        .texto-error { color: #ff4d4d; font-family: monospace; background: rgba(255, 77, 77, 0.05); padding: 4px 8px; border-radius: 4px; }
+
+        .analisis-costos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .analisis-costos { grid-template-columns: 1fr; } }
+        .item-costo { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .item-costo span:first-child { color: rgba(255, 255, 255, 0.6); }
+        .item-costo span:last-child { font-weight: bold; font-family: 'Orbitron', sans-serif; }
+        
+        @keyframes pulseNew {
+            0% { background-color: rgba(0, 255, 204, 0.2); }
+            100% { background-color: transparent; }
+        }
+        .fila-nueva { animation: pulseNew 2s ease-out; }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        
+        <div class="header-admin">
+            <h1>NELIDA-AI // <span>PANEL DE CONTROL</span></h1>
+            <div style="display:flex; align-items:center; gap: 15px;">
+                <span id="estado-conexion" style="color: var(--neon-green); font-size: 12px; font-family: 'Orbitron';"><span style="display:inline-block; width:8px; height:8px; background:var(--neon-green); border-radius:50%; margin-right:5px; box-shadow: 0 0 8px var(--neon-green);"></span>EN VIVO</span>
+                <button class="btn-logout" onclick="window.cerrarSesionAdmin()">CERRAR SESIÓN</button>
+            </div>
+        </div>
+
+        <div class="grid-metricas">
+            <div class="card-metrica pro">
+                <h3>Usuarios PRO Activos</h3>
+                <div id="metric-usuarios-pro" class="valor">0</div>
+            </div>
+            <div class="card-metrica consumo">
+                <h3>Costo Consumido Global</h3>
+                <div id="metric-consumo-total" class="valor">$0.00</div>
+            </div>
+            <div class="card-metrica creditos">
+                <h3>Fondo de APIs Estimado</h3>
+                <div id="metric-saldo-api" class="valor">$10.00</div>
+            </div>
+            <div class="card-metrica errores">
+                <h3>Total Usuarios Únicos</h3>
+                <div id="metric-usuarios-totales" class="valor">0</div>
+                <div style="font-size: 11px; color: #888; margin-top: 5px; font-family: monospace;">
+                    Logueados: <span id="metric-logueados" style="color: var(--neon-green);">0</span> | Free: <span id="metric-anonimos" style="color: #fff;">0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="seccion-panel">
+            <h2>Registro en Tiempo Real</h2>
+            <div class="contenedor-tabla">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha / Último Acceso</th>
+                            <th>Email</th>
+                            <th>Faceta Activa</th>
+                            <th>Estado Plan</th>
+                            <th>Mensajes Restantes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-usuarios-body">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: rgba(255,255,255,0.4);">Iniciando conexión con el núcleo de Nélida...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="analisis-costos">
+            <div class="seccion-panel">
+                <h2>Evaluación de Funcionamiento y Costos</h2>
+                <div class="item-costo">
+                    <span>Consultas Totales a Gemini Flash</span>
+                    <span id="costo-consultas-gemini" style="color: var(--neon-blue);">0</span>
+                </div>
+                <div class="item-costo">
+                    <span>Caracteres de Voz Procesados (OpenAI)</span>
+                    <span id="costo-caracteres-openai" style="color: var(--neon-purple);">0</span>
+                </div>
+                <div class="item-costo">
+                    <span>Gasto Estimado Gemini API</span>
+                    <span id="gasto-gemini-usd">$0.0000 USD</span>
+                </div>
+                <div class="item-costo">
+                    <span>Gasto Estimado OpenAI API</span>
+                    <span id="gasto-openai-usd">$0.0000 USD</span>
+                </div>
+                <div class="item-costo" style="border-bottom: none; margin-top: 10px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.2);">
+                    <span style="color: #fff; font-weight: bold;">Costo Operativo Total</span>
+                    <span id="costo-operativo-total" style="color: var(--neon-green); font-size: 1.2em;">$0.00 USD</span>
+                </div>
+            </div>
+
+            <div class="seccion-panel">
+                <h2>Reporte de Errores del Sistema</h2>
+                <div class="contenedor-tabla">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Hora / Fecha</th>
+                                <th>Usuario</th>
+                                <th>Detalle del Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-errores-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: rgba(255,255,255,0.4);">No se registran fallas de ejecución. All Systems Nominal.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        // CAMBIO: Importamos serverTimestamp
-        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        if (localStorage.getItem('admin_autorizado') !== 'true') {
+            window.location.href = 'login.html';
+        }
+
+        window.cerrarSesionAdmin = () => {
+            localStorage.removeItem('admin_autorizado');
+            window.location.href = 'login.html';
+        };
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -21,99 +198,136 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        window.crearCuentaEmail = async () => {
-            const nombre = document.getElementById('reg-nombre').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
-            const pass = document.getElementById('reg-pass').value;
+        function formatearFecha(timestamp) {
+            if (!timestamp) return '<span style="color:#666">Fecha desconocida</span>';
+            const millis = typeof timestamp.toMillis === 'function' ? timestamp.toMillis() : (typeof timestamp === 'number' ? timestamp : Date.parse(timestamp));
+            if (isNaN(millis)) return '<span style="color:#666">Fecha inválida</span>';
             
-            if(!nombre || !email || !pass) {
-                return alert("⚠️ Por favor, completá todos los casilleros.");
-            }
-            if(pass.length < 6) {
-                return alert("⚠️ La contraseña debe tener al menos 6 caracteres por seguridad.");
-            }
-            const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if(!regexEmail.test(email)) {
-                return alert("⚠️ El formato del correo electrónico no es válido.");
-            }
+            const fecha = new Date(millis);
+            return fecha.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
 
+        function iniciarRadarPanel() {
             try {
-                // 1. Crea el usuario de verdad únicamente acá
-                const result = await createUserWithEmailAndPassword(auth, email, pass);
+                const tabla = document.getElementById('tabla-usuarios-body');
                 
-                // 2. Guarda el perfil en Firestore
-                const paisDetectado = navigator.language || "es-AR";
-                await setDoc(doc(db, "usuarios", result.user.uid), {
-                    nombre: nombre, 
-                    email: email,
-                    foto: "",
-                    pais: paisDetectado,
-                    edad: 0,
-                    version_seleccionada: "Pendiente",
-                    // CAMBIO: Agregamos las fechas correctas para el panel
-                    fecha_registro: serverTimestamp(),
-                    ultimo_acceso: serverTimestamp()
-                }, { merge: true });
+                onSnapshot(collection(db, "usuarios"), (snapshot) => {
+                    let usuariosArray = [];
+                    let contPro = 0;
+                    let consultasGeminiTotales = 0;
+                    let caracteresOpenAITotales = 0;
 
-                console.log("Perfil guardado con éxito.");
-                // 3. Al checkout directo a pagar o elegir la prueba
-                window.location.href = "checkout.html";
-                
+                    // Variables para el conteo de usuarios únicos
+                    let correosUnicos = new Set();
+                    let usuariosFreeSinCorreo = 0;
+
+                    snapshot.forEach((docSnap) => {
+                        let data = docSnap.data();
+                        data.uid = docSnap.id;
+                        usuariosArray.push(data);
+                    });
+
+                    usuariosArray.sort((a, b) => {
+                        let tiempoA = a.fecha_registro || a.ultimo_acceso || a.timestamp || a.createdAt || 0;
+                        let tiempoB = b.fecha_registro || b.ultimo_acceso || b.timestamp || b.createdAt || 0;
+
+                        if (typeof tiempoA.toMillis === 'function') tiempoA = tiempoA.toMillis();
+                        if (typeof tiempoB.toMillis === 'function') tiempoB = tiempoB.toMillis();
+                        
+                        return tiempoB - tiempoA;
+                    });
+
+                    tabla.innerHTML = '';
+
+                    if (usuariosArray.length === 0) {
+                        tabla.innerHTML = `<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,0.4);">La base de datos está vacía.</td></tr>`;
+                    }
+
+                    usuariosArray.forEach((data, index) => {
+                        const emailUser = data.email || "";
+                        const esAnonimo = emailUser.trim() === "";
+                        
+                        // LÓGICA DE CONTEO ÚNICO
+                        if (!esAnonimo && emailUser.includes('@')) {
+                            correosUnicos.add(emailUser.toLowerCase().trim());
+                        } else {
+                            usuariosFreeSinCorreo++;
+                        }
+
+                        const textoEmailTabla = esAnonimo ? `<span style="color:#888;">Ingreso Anónimo / ID: ${data.uid.substring(0, 5)}</span>` : emailUser;
+                        const faceta = data.version_seleccionada || "Ayuda General";
+                        const creditos = data.mensajesRestantes !== undefined ? data.mensajesRestantes : 10;
+                        
+                        const esPro = creditos > 500;
+                        if(esPro) contPro++;
+                        
+                        let mensajesConsumidos = esPro ? (2000 - creditos) : (10 - creditos);
+                        if (mensajesConsumidos < 0) mensajesConsumidos = 0;
+
+                        consultasGeminiTotales += mensajesConsumidos;
+
+                        if (esPro) {
+                            caracteresOpenAITotales += (mensajesConsumidos * 350);
+                        }
+                        
+                        const spanBadge = esPro ? `<span class="badge pro">PRO</span>` : `<span class="badge free">FREE</span>`;
+                        
+                        const campoFecha = data.fecha_registro || data.ultimo_acceso || data.timestamp || data.createdAt;
+
+                        const fila = document.createElement('tr');
+                        if(index === 0) fila.className = "fila-nueva";
+                        
+                        fila.innerHTML = `
+                            <td style="font-family: monospace; color: var(--neon-blue);">${formatearFecha(campoFecha)}</td>
+                            <td>${textoEmailTabla}</td>
+                            <td style="text-transform: capitalize;">${faceta}</td>
+                            <td>${spanBadge}</td>
+                            <td style="font-weight: bold; color: var(--neon-green);">${creditos}</td>
+                        `;
+                        tabla.appendChild(fila);
+                    });
+
+                    // CÁLCULOS FINANCIEROS Y DE USUARIOS
+                    const totalLogueados = correosUnicos.size;
+                    const totalUsuariosReales = totalLogueados + usuariosFreeSinCorreo;
+
+                    const gastoGemini = consultasGeminiTotales * 0.000075;
+                    const gastoOpenAI = (caracteresOpenAITotales / 1000000) * 15.00;
+                    const costoTotalGlobal = gastoGemini + gastoOpenAI;
+                    const fondoInicialPrecompra = 10.00;
+                    const saldoRestanteAPI = fondoInicialPrecompra - costoTotalGlobal;
+
+                    // ACTUALIZACIÓN DE TARJETAS
+                    document.getElementById('metric-usuarios-pro').innerText = contPro;
+                    
+                    document.getElementById('metric-usuarios-totales').innerText = totalUsuariosReales;
+                    document.getElementById('metric-logueados').innerText = totalLogueados;
+                    document.getElementById('metric-anonimos').innerText = usuariosFreeSinCorreo;
+
+                    document.getElementById('metric-consumo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
+                    document.getElementById('metric-saldo-api').innerText = `$${saldoRestanteAPI.toFixed(2)} USD`;
+                    
+                    document.getElementById('costo-consultas-gemini').innerText = consultasGeminiTotales;
+                    document.getElementById('costo-caracteres-openai').innerText = caracteresOpenAITotales;
+                    
+                    document.getElementById('gasto-gemini-usd').innerText = `$${gastoGemini.toFixed(4)} USD`;
+                    document.getElementById('gasto-openai-usd').innerText = `$${gastoOpenAI.toFixed(4)} USD`;
+                    document.getElementById('costo-operativo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
+
+                }, (error) => {
+                    console.error("Error en el Radar de Firebase:", error);
+                    document.getElementById('tabla-usuarios-body').innerHTML = `<tr><td colspan="5" class="texto-error">Conexión interrumpida con la Base de Datos. ${error.message}</td></tr>`;
+                    document.getElementById('estado-conexion').innerHTML = `<span style="color:red;">OFFLINE</span>`;
+                });
+
             } catch (error) {
-                if (error.code === 'auth/email-already-in-use') {
-                    alert("❌ Este correo electrónico ya existe. Si es tuyo, volvé atrás e iniciá sesión.");
-                } else {
-                    alert("❌ Error al registrar cuenta: " + error.message);
-                }
+                console.error("Error al inicializar Panel:", error);
             }
-        };
+        }
+
+        iniciarRadarPanel();
     </script>
-
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
-        .contenedor { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .img-fondo { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: 1; filter: brightness(0.6); }
-        .caja-registro { position: relative; width: 340px; z-index: 10; display: flex; flex-direction: column; gap: 15px; background: rgba(0, 0, 0, 0.75); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 1px solid rgba(0, 255, 204, 0.2); box-shadow: 0 0 25px rgba(0, 255, 204, 0.15); }
-        h2 { color: #fff; font-family: 'Segoe UI', sans-serif; font-size: 1.4em; text-align: center; letter-spacing: 1px; margin-bottom: 5px; }
-        h2 span { color: #00ffcc; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; }
-        label { color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
-        input { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.3); background: rgba(0,0,0,0.6); font-size: 13px; color: #fff; outline: none; }
-        input:focus { border-color: #8e44ad; box-shadow: 0 0 8px rgba(142, 68, 173, 0.4); }
-        .btn-registrar { background: #8e44ad; color: white; border: none; padding: 13px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3); transition: 0.3s; }
-        .btn-registrar:hover { background: #9b59b6; transform: translateY(-1px); }
-        .btn-volver { background: transparent; color: #aaa; border: none; font-size: 12px; cursor: pointer; text-align: center; text-decoration: underline; margin-top: 5px; }
-    </style>
-</head>
-<body>
-    <div class="contenedor">
-        <img src="versiones_nelida/sexologa.png" class="img-fondo">
-        
-        <div class="caja-registro">
-            <h2>Crear cuenta en <span>Nélida</span></h2>
-            
-            <div class="form-group">
-                <label>Nombre y Apellido</label>
-                <input type="text" id="reg-nombre" placeholder="Ej: Hernán Muñoz" autocomplete="off">
-            </div>
-
-            <div class="form-group">
-                <label>Correo electrónico</label>
-                <input type="email" id="reg-email" placeholder="nombre@correo.com" autocomplete="off">
-            </div>
-
-            <div class="form-group">
-                <label>Contraseña (Mínimo 6 caracteres)</label>
-                <input type="password" id="reg-pass" placeholder="******">
-            </div>
-
-            <button class="btn-registrar" onclick="window.crearCuentaEmail()">Registrarse y Continuar</button>
-            <button class="btn-volver" onclick="window.location.href='login.html'">Ya tengo cuenta, iniciar sesión</button>
-        </div>
-    </div>
 </body>
 </html>
