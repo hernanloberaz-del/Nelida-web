@@ -42,7 +42,7 @@
         .card-metrica.pro .valor { color: var(--neon-purple); text-shadow: 0 0 10px rgba(142, 68, 173, 0.4); }
         .card-metrica.consumo .valor { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
         .card-metrica.creditos .valor { color: var(--neon-green); text-shadow: 0 0 10px rgba(0, 255, 204, 0.4); }
-        .card-metrica.errores .valor { color: #ff4d4d; text-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
+        .card-metrica.errores .valor { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
 
         .seccion-panel { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); }
         .seccion-panel h2 { font-size: 18px; margin-bottom: 20px; color: #fff; border-left: 4px solid var(--neon-blue); padding-left: 12px; }
@@ -64,7 +64,6 @@
         .item-costo span:first-child { color: rgba(255, 255, 255, 0.6); }
         .item-costo span:last-child { font-weight: bold; font-family: 'Orbitron', sans-serif; }
         
-        /* Efecto pulsante para nuevos usuarios en la tabla */
         @keyframes pulseNew {
             0% { background-color: rgba(0, 255, 204, 0.2); }
             100% { background-color: transparent; }
@@ -98,8 +97,11 @@
                 <div id="metric-saldo-api" class="valor">$10.00</div>
             </div>
             <div class="card-metrica errores">
-                <h3>Usuarios Totales</h3>
-                <div id="metric-usuarios-totales" class="valor" style="color: var(--neon-blue);">0</div>
+                <h3>Total Usuarios Únicos</h3>
+                <div id="metric-usuarios-totales" class="valor">0</div>
+                <div style="font-size: 11px; color: #888; margin-top: 5px; font-family: monospace;">
+                    Logueados: <span id="metric-logueados" style="color: var(--neon-green);">0</span> | Free: <span id="metric-anonimos" style="color: #fff;">0</span>
+                </div>
             </div>
         </div>
 
@@ -175,7 +177,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        // CAMBIO CLAVE AQUÍ: Importamos onSnapshot en lugar de getDocs
         import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         if (localStorage.getItem('admin_autorizado') !== 'true') {
@@ -199,10 +200,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Función para formatear fechas de forma legible
         function formatearFecha(timestamp) {
             if (!timestamp) return '<span style="color:#666">Fecha desconocida</span>';
-            // Si es un Timestamp de Firebase, lo convertimos a milisegundos
             const millis = typeof timestamp.toMillis === 'function' ? timestamp.toMillis() : (typeof timestamp === 'number' ? timestamp : Date.parse(timestamp));
             if (isNaN(millis)) return '<span style="color:#666">Fecha inválida</span>';
             
@@ -214,22 +213,22 @@
             try {
                 const tabla = document.getElementById('tabla-usuarios-body');
                 
-                // onSnapshot mantiene la conexión abierta y se actualiza solo cada vez que hay un cambio en la BD
                 onSnapshot(collection(db, "usuarios"), (snapshot) => {
                     let usuariosArray = [];
                     let contPro = 0;
                     let consultasGeminiTotales = 0;
                     let caracteresOpenAITotales = 0;
 
-                    // 1. Extraemos todos los datos al array
+                    // Variables para el conteo de usuarios únicos
+                    let correosUnicos = new Set();
+                    let usuariosFreeSinCorreo = 0;
+
                     snapshot.forEach((docSnap) => {
                         let data = docSnap.data();
                         data.uid = docSnap.id;
                         usuariosArray.push(data);
                     });
 
-                    // 2. ORDENAMOS EL ARRAY POR FECHA (El más nuevo arriba)
-                    // Buscamos cualquier campo que Nélida esté usando para guardar la fecha
                     usuariosArray.sort((a, b) => {
                         let tiempoA = a.fecha_registro || a.ultimo_acceso || a.timestamp || a.createdAt || 0;
                         let tiempoB = b.fecha_registro || b.ultimo_acceso || b.timestamp || b.createdAt || 0;
@@ -237,10 +236,9 @@
                         if (typeof tiempoA.toMillis === 'function') tiempoA = tiempoA.toMillis();
                         if (typeof tiempoB.toMillis === 'function') tiempoB = tiempoB.toMillis();
                         
-                        return tiempoB - tiempoA; // Orden descendente
+                        return tiempoB - tiempoA;
                     });
 
-                    // 3. Limpiamos y re-dibujamos la tabla
                     tabla.innerHTML = '';
 
                     if (usuariosArray.length === 0) {
@@ -248,7 +246,17 @@
                     }
 
                     usuariosArray.forEach((data, index) => {
-                        const emailUser = data.email || `<span style="color:#888;">Ingreso Anónimo / ID: ${data.uid.substring(0, 5)}</span>`;
+                        const emailUser = data.email || "";
+                        const esAnonimo = emailUser.trim() === "";
+                        
+                        // LÓGICA DE CONTEO ÚNICO
+                        if (!esAnonimo && emailUser.includes('@')) {
+                            correosUnicos.add(emailUser.toLowerCase().trim());
+                        } else {
+                            usuariosFreeSinCorreo++;
+                        }
+
+                        const textoEmailTabla = esAnonimo ? `<span style="color:#888;">Ingreso Anónimo / ID: ${data.uid.substring(0, 5)}</span>` : emailUser;
                         const faceta = data.version_seleccionada || "Ayuda General";
                         const creditos = data.mensajesRestantes !== undefined ? data.mensajesRestantes : 10;
                         
@@ -266,16 +274,14 @@
                         
                         const spanBadge = esPro ? `<span class="badge pro">PRO</span>` : `<span class="badge free">FREE</span>`;
                         
-                        // Buscamos la fecha en los campos más comunes
                         const campoFecha = data.fecha_registro || data.ultimo_acceso || data.timestamp || data.createdAt;
 
                         const fila = document.createElement('tr');
-                        // Si es el primero de la lista, le damos un efectito
                         if(index === 0) fila.className = "fila-nueva";
                         
                         fila.innerHTML = `
                             <td style="font-family: monospace; color: var(--neon-blue);">${formatearFecha(campoFecha)}</td>
-                            <td>${emailUser}</td>
+                            <td>${textoEmailTabla}</td>
                             <td style="text-transform: capitalize;">${faceta}</td>
                             <td>${spanBadge}</td>
                             <td style="font-weight: bold; color: var(--neon-green);">${creditos}</td>
@@ -283,15 +289,23 @@
                         tabla.appendChild(fila);
                     });
 
-                    // CÁLCULOS FINANCIEROS (Se actualizan en vivo también)
+                    // CÁLCULOS FINANCIEROS Y DE USUARIOS
+                    const totalLogueados = correosUnicos.size;
+                    const totalUsuariosReales = totalLogueados + usuariosFreeSinCorreo;
+
                     const gastoGemini = consultasGeminiTotales * 0.000075;
                     const gastoOpenAI = (caracteresOpenAITotales / 1000000) * 15.00;
                     const costoTotalGlobal = gastoGemini + gastoOpenAI;
                     const fondoInicialPrecompra = 10.00;
                     const saldoRestanteAPI = fondoInicialPrecompra - costoTotalGlobal;
 
+                    // ACTUALIZACIÓN DE TARJETAS
                     document.getElementById('metric-usuarios-pro').innerText = contPro;
-                    document.getElementById('metric-usuarios-totales').innerText = usuariosArray.length;
+                    
+                    document.getElementById('metric-usuarios-totales').innerText = totalUsuariosReales;
+                    document.getElementById('metric-logueados').innerText = totalLogueados;
+                    document.getElementById('metric-anonimos').innerText = usuariosFreeSinCorreo;
+
                     document.getElementById('metric-consumo-total').innerText = `$${costoTotalGlobal.toFixed(2)} USD`;
                     document.getElementById('metric-saldo-api').innerText = `$${saldoRestanteAPI.toFixed(2)} USD`;
                     
@@ -313,7 +327,6 @@
             }
         }
 
-        // Arrancamos el radar
         iniciarRadarPanel();
     </script>
 </body>
