@@ -1,7 +1,6 @@
 export default async function handler(req, res) {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-    res.setHeader('Content-Type', 'application/json');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Solo peticiones POST permitidas' });
 
     if (!OPENAI_API_KEY) {
@@ -22,9 +21,9 @@ export default async function handler(req, res) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "tts-1",
-                voice: "nova", // "nova" es ideal: tono natural, profesional y versátil en múltiples idiomas
-                input: texto.substring(0, 4000) // Protege el límite de envío
+                model: "tts-1", // Usar tts-1 (y no tts-1-hd) es clave porque está optimizado para baja latencia
+                voice: "nova", 
+                input: texto.substring(0, 4000) 
             })
         });
 
@@ -33,12 +32,12 @@ export default async function handler(req, res) {
             throw new Error(`Fallo en OpenAI: ${errorData}`);
         }
 
-        // Convertimos el audio directamente a base64 para mandarlo rápido a la web
+        // LA MAGIA: Extraemos el audio crudo y lo mandamos directamente sin convertir a Base64
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const audioBase64 = buffer.toString('base64');
-
-        return res.status(200).json({ audioBase64 });
+        
+        res.setHeader('Content-Type', 'audio/mpeg'); // Le avisamos a la web que viene un MP3 puro
+        return res.status(200).send(buffer);
 
     } catch (err) {
         return res.status(500).json({ error: err.message });
