@@ -665,6 +665,49 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ texto: textoLimpio })
                 });
+
+                if (!res.ok) throw new Error("Error en el servidor de voz");
+                
+                // LA SOLUCIÓN: Recibimos el audio crudo (Blob) y lo transformamos en una URL reproducible
+                const audioBlob = await res.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                window.audioNelida = new Audio(audioUrl);
+                btnElement.innerHTML = '⏹️ Detener';
+                if(cajaVideo) cajaVideo.classList.add('modo-hablando');
+                window.audioNelida.play();
+                
+                window.audioNelida.onended = () => {
+                    btnElement.innerHTML = '🔊 Escuchar';
+                    if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
+                };
+                
+            } catch (e) {
+                console.error("Error de audio:", e);
+                alert("⏳ Hubo un problema al procesar el audio. Por favor, intenta de nuevo.");
+                btnElement.innerHTML = '🔊 Escuchar';
+            }
+        };
+
+            const cajaVideo = document.getElementById('caja-video');
+            
+            if (window.audioNelida && !window.audioNelida.paused) {
+                window.audioNelida.pause();
+                window.audioNelida.currentTime = 0;
+                btnElement.innerHTML = '🔊 Escuchar';
+                if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
+                return;
+            }
+
+            const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
+            btnElement.innerHTML = '⏳ Cargando voz...';
+            
+            try {
+                const res = await fetch('/api/hablar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ texto: textoLimpio })
+                });
                 const data = await res.json();
                 
                 if (data.audioBase64) {
