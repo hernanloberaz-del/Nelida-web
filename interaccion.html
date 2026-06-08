@@ -178,7 +178,6 @@
             scrollbar-color: var(--neon-green) transparent; 
         }
 
-        /* Estilos de burbujas ajustados */
         .msg-usuario {
             background: rgba(255, 255, 255, 0.08);
             padding: 15px 22px;
@@ -188,6 +187,7 @@
             margin-left: auto;
             text-align: left;
             color: #fff;
+            white-space: pre-wrap; /* Permite que los saltos de línea se vean en el mensaje */
         }
 
         .msg-nelida {
@@ -224,14 +224,15 @@
 
         .input-box {
             display: flex;
-            align-items: center;
+            align-items: flex-end; /* Alinea los botones al fondo cuando la caja crece */
             width: 100%;
             background: rgba(35, 35, 35, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 30px;
+            border-radius: 25px; /* Ajustado para que el textarea cuadre mejor */
             padding: 8px 12px;
             transition: 0.3s;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            min-height: 52px;
         }
         .input-box:focus-within {
             background: rgba(45, 45, 45, 0.9);
@@ -247,10 +248,12 @@
             color: #aaa;
             transition: 0.2s;
             border-radius: 50%;
+            margin-bottom: 2px; /* Alineación con el textarea */
         }
         .btn-clip:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
-        input[type="text"] { 
+        /* NUEVO TEXTAREA EXPANDIBLE */
+        textarea#userInput { 
             flex: 1; 
             background: transparent; 
             border: none; 
@@ -258,8 +261,14 @@
             padding: 12px 15px; 
             outline: none;
             font-size: 16px;
+            resize: none; 
+            max-height: 120px; 
+            overflow-y: auto;
+            font-family: inherit;
+            line-height: 1.5;
+            margin-bottom: 2px;
         }
-        input[type="text"]::placeholder { color: #888; }
+        textarea#userInput::placeholder { color: #888; }
 
         .btn-action { 
             background: #fff; 
@@ -271,6 +280,7 @@
             font-weight: bold; 
             font-size: 14px;
             transition: 0.2s;
+            margin-bottom: 5px; /* Alineación con el textarea */
         }
         .btn-action:hover { background: var(--neon-green); }
 
@@ -286,7 +296,7 @@
             #menu-versiones { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 5px; }
             .btn-menu { white-space: nowrap; padding: 8px 12px; }
             .btn-logout { margin-top: 0; padding: 8px; }
-            .btn-logout span { display: none; } /* Oculta texto en movil, deja solo icono si le pones */
+            .btn-logout span { display: none; }
             .input-box { border-radius: 20px; }
             #zona-mensajes { padding: 15px; }
         }
@@ -332,7 +342,7 @@
                     <input type="file" id="archivoAdjunto" style="display: none;" accept=".pdf, .xls, .xlsx, .doc, .docx, .txt, image/*">
                     <button type="button" class="btn-clip" onclick="document.getElementById('archivoAdjunto').click()" title="Adjuntar documento">📎</button>
                     
-                    <input type="text" id="userInput" placeholder="Escribe un mensaje para Nélida..." onkeypress="if(event.key==='Enter') enviar()">
+                    <textarea id="userInput" placeholder="Escribe un mensaje para Nélida..." rows="1"></textarea>
                     
                     <button class="btn-action" onclick="enviar()">Enviar</button>
                 </div>
@@ -343,7 +353,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        // Agregada la importacion de updateDoc
         import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -398,7 +407,6 @@
             "terapia_parejas": "terapia deparejas.PNG"
         };
 
-        // RENDERIZAR MENÚ DINÁMICO
         function renderizarMenu() {
             const menu = document.getElementById('menu-versiones');
             menu.innerHTML = '';
@@ -409,42 +417,32 @@
             }
         }
 
-        // FUNCIÓN PARA CAMBIAR VERSIÓN DESDE EL MENÚ
         window.cambiarFaceta = async (nuevaFaceta) => {
             facetaActiva = nuevaFaceta;
-            
-            // Actualizar visual de botones
             document.querySelectorAll('.btn-menu').forEach(btn => btn.classList.remove('activo'));
             document.getElementById('btn-' + nuevaFaceta).classList.add('activo');
             
-            // Actualizar encabezados y fondo
             document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
             if (mapaFondos[facetaActiva]) {
                 document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
             }
             
-            // Reiniciar chat
             const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
             document.getElementById('zona-mensajes').innerHTML = `<div id="msg-inicial" class="msg-nelida"><b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.</div>`;
-            historialAcumulado = []; // Limpiamos la memoria para que asuma el nuevo rol
+            historialAcumulado = []; 
             
-            // Guardar en Firebase para la próxima vez
             if (currentUser) {
                 try {
                     await updateDoc(doc(db, "usuarios", currentUser.uid), {
                         version_seleccionada: nuevaFaceta
                     });
-                } catch(e) { console.error("Error guardando nueva faceta en BD", e); }
+                } catch(e) { console.error("Error guardando nueva faceta", e); }
             }
         };
 
-        // FUNCIÓN PARA CERRAR SESIÓN
         window.cerrarSesion = () => {
-            signOut(auth).then(() => {
-                window.location.href = "login.html";
-            }).catch((error) => {
-                console.error("Error al cerrar sesión", error);
-            });
+            signOut(auth).then(() => { window.location.href = "login.html"; })
+            .catch((error) => { console.error("Error al cerrar sesión", error); });
         };
 
         function actualizarContador() {
@@ -474,16 +472,11 @@
             if (user) {
                 currentUser = user;
                 const docSnap = await getDoc(doc(db, "usuarios", user.uid));
-                if (docSnap.exists()) {
-                    facetaActiva = docSnap.data().version_seleccionada || "ayuda";
-                }
-                // Una vez que sabemos la faceta del usuario, renderizamos el menu
+                if (docSnap.exists()) { facetaActiva = docSnap.data().version_seleccionada || "ayuda"; }
                 renderizarMenu();
                 
                 document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
-                if (mapaFondos[facetaActiva]) {
-                    document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
-                }
+                if (mapaFondos[facetaActiva]) { document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva]; }
                 const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
                 document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
             } else { window.location.href = "login.html"; }
@@ -511,6 +504,21 @@
             document.getElementById('file-indicator').style.display = 'none';
         };
 
+        // EVENTOS DEL TEXTAREA
+        const inputTexto = document.getElementById('userInput');
+        
+        inputTexto.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        inputTexto.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); 
+                enviar();
+            }
+        });
+
         window.enviar = async () => {
             const input = document.getElementById('userInput');
             const zona = document.getElementById('zona-mensajes');
@@ -524,6 +532,7 @@
                 localStorage.setItem('nelida_pro', 'true'); 
                 actualizarContador();
                 input.value = "";
+                input.style.height = 'auto';
                 zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold;">🔓 ACCESO AUTORIZADO: MODO DIOS ACTIVADO.</div>`;
                 zona.scrollTop = zona.scrollHeight;
                 return;
@@ -532,6 +541,7 @@
             if (texto === "/Reset2026") {
                 localStorage.removeItem('nelida_pro');
                 input.value = "";
+                input.style.height = 'auto';
                 zona.innerHTML += `<div style="color: #ff4d4d; text-align: center; margin: 15px 0; font-weight: bold;">🔄 MEMORIA BORRADA...</div>`;
                 zona.scrollTop = zona.scrollHeight;
                 setTimeout(() => { window.location.reload(); }, 2000);
@@ -545,6 +555,7 @@
             
             zona.innerHTML += `<div class="msg-usuario">${mensajePantalla}</div>`;
             input.value = "";
+            input.style.height = 'auto'; // Resetea la altura de la caja
             zona.scrollTop = zona.scrollHeight;
 
             const idCarga = "carga-" + Date.now();
