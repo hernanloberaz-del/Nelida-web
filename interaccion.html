@@ -688,47 +688,6 @@
                 btnElement.innerHTML = '🔊 Escuchar';
             }
         };
-
-            const cajaVideo = document.getElementById('caja-video');
-            
-            if (window.audioNelida && !window.audioNelida.paused) {
-                window.audioNelida.pause();
-                window.audioNelida.currentTime = 0;
-                btnElement.innerHTML = '🔊 Escuchar';
-                if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                return;
-            }
-
-            const textoLimpio = decodeURIComponent(window.textosAudio[idMsgUnico]).replace(/[#*_]/g, '');
-            btnElement.innerHTML = '⏳ Cargando voz...';
-            
-            try {
-                const res = await fetch('/api/hablar', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ texto: textoLimpio })
-                });
-                const data = await res.json();
-                
-                if (data.audioBase64) {
-                    window.audioNelida = new Audio("data:audio/mp3;base64," + data.audioBase64);
-                    btnElement.innerHTML = '⏹️ Detener';
-                    if(cajaVideo) cajaVideo.classList.add('modo-hablando');
-                    window.audioNelida.play();
-                    
-                    window.audioNelida.onended = () => {
-                        btnElement.innerHTML = '🔊 Escuchar';
-                        if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                    };
-                } else {
-                    alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
-                    btnElement.innerHTML = '🔊 Escuchar';
-                }
-            } catch (e) {
-                alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
-                btnElement.innerHTML = '🔊 Escuchar';
-            }
-        };
     </script>
 </body>
 </html>
