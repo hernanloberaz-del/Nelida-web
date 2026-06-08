@@ -16,18 +16,20 @@
             --neon-green: #00ffcc;
             --neon-purple: #8e44ad;
             --neon-blue: #00d2ff;
-            --glass-bg: rgba(0, 0, 0, 0.85);
-            --glass-border: rgba(0, 255, 204, 0.25);
+            --glass-bg: rgba(15, 15, 15, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         
         body { 
             background-color: #030303; 
-            font-family: 'Orbitron', 'Segoe UI', sans-serif; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             color: #fff; 
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden; /* Evita el scroll en toda la pagina, solo en el chat */
         }
         
+        /* Imagen de fondo dinámica */
         #fondo-nelida { 
             position: fixed; 
             top: 0; 
@@ -36,70 +38,139 @@
             height: 100%; 
             object-fit: cover; 
             z-index: 1; 
-            filter: brightness(0.25) blur(4px); 
+            filter: brightness(0.25) blur(6px); 
+            transition: all 0.5s ease-in-out;
         }
-        
-        .interfaz-usuario { 
-            position: relative; 
-            z-index: 10; 
-            display: flex; 
-            flex-direction: row; 
-            justify-content: space-between; 
-            align-items: center; 
-            height: 100vh; 
-            padding: 2% 4%; 
-            gap: 25px; 
+
+        /* Contenedor principal estilo Gemini */
+        .app-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
         }
-        
-        .contenedor-estetico { 
-            background: var(--glass-bg); 
-            backdrop-filter: blur(12px); 
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border); 
-            border-radius: 16px; 
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.05); 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
+
+        /* --- MENU LATERAL (SIDEBAR) --- */
+        .sidebar {
+            width: 280px;
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100%;
         }
-        
-        #caja-chat { width: 62%; height: 85vh; }
+
+        /* Video reubicado en el menú */
         #caja-video { 
-            width: 35%; 
-            height: 60vh; 
+            width: 100%; 
+            height: 160px;
+            border-radius: 12px;
+            overflow: hidden;
             position: relative; 
             display: flex;
             align-items: center;
             justify-content: center;
             background: rgba(0, 0, 0, 0.95);
-            border-color: rgba(0, 210, 255, 0.2);
+            border: 2px solid rgba(0, 210, 255, 0.2);
             transition: 0.5s ease-in-out;
-            box-shadow: 0 0 25px rgba(0, 210, 255, 0.05);
+            margin-bottom: 20px;
+            flex-shrink: 0;
         }
-        
         #caja-video.modo-hablando {
             border-color: var(--neon-blue);
-            box-shadow: 0 0 40px rgba(0, 210, 255, 0.35), 0 0 70px rgba(142, 68, 173, 0.2);
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.35), 0 0 50px rgba(142, 68, 173, 0.2);
         }
-        
+        video { width: 100%; height: 100%; object-fit: cover; }
+
+        .sidebar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.85em;
+            color: #888;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            padding-left: 5px;
+        }
+
+        #menu-versiones {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
+        }
+
+        .btn-menu {
+            background: transparent;
+            color: #e5e5e5;
+            border: none;
+            padding: 12px 15px;
+            text-align: left;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 0.95em;
+        }
+        .btn-menu:hover { background: rgba(255, 255, 255, 0.05); }
+        .btn-menu.activo {
+            background: rgba(0, 255, 204, 0.1);
+            color: var(--neon-green);
+            font-weight: bold;
+            border-left: 3px solid var(--neon-green);
+        }
+
+        .btn-logout {
+            margin-top: 15px;
+            background: rgba(255, 77, 77, 0.1);
+            color: #ff4d4d;
+            border: 1px solid rgba(255, 77, 77, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-logout:hover { background: rgba(255, 77, 77, 0.2); }
+
+        /* --- ÁREA CENTRAL DE CHAT --- */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            position: relative;
+        }
+
         .status-bar { 
-            padding: 14px 20px; 
-            background: rgba(0, 255, 204, 0.07); 
-            border-bottom: 1px solid var(--glass-border); 
+            width: 100%;
+            padding: 15px 30px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
-            font-size: 0.85em; 
-            letter-spacing: 2px; 
-            text-transform: uppercase; 
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em; 
+            letter-spacing: 1px; 
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%);
         }
-        
-        #contador-ui { font-weight: bold; font-size: 1.1em; transition: 0.3s; }
+        #contador-ui { font-weight: bold; transition: 0.3s; }
 
         #zona-mensajes { 
             flex: 1; 
+            width: 100%;
+            max-width: 900px;
             overflow-y: auto; 
-            padding: 25px; 
+            padding: 30px 20px; 
             color: #e5e5e5; 
             font-size: 1.05em; 
             line-height: 1.6; 
@@ -107,140 +178,173 @@
             scrollbar-color: var(--neon-green) transparent; 
         }
 
+        /* Estilos de burbujas ajustados */
         .msg-usuario {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px 12px 0 12px;
-            padding: 12px 18px;
-            margin-bottom: 15px;
-            max-width: 85%;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px 22px;
+            margin-bottom: 20px;
+            border-radius: 20px 20px 0 20px;
+            max-width: 80%;
             margin-left: auto;
             text-align: left;
-            color: rgba(255,255,255,0.9);
+            color: #fff;
         }
 
         .msg-nelida {
-            background: rgba(0, 255, 204, 0.01);
-            border-left: 3px solid var(--neon-green);
-            padding: 15px;
-            margin-bottom: 25px;
-            border-radius: 0 12px 12px 12px;
+            padding: 0 0 30px 0;
+            margin-bottom: 10px;
+            max-width: 95%;
         }
-        
-        .input-box { 
-            display: flex; 
-            padding: 16px 20px; 
-            gap: 12px; 
-            background: rgba(0, 0, 0, 0.7); 
-            border-top: 1px solid var(--glass-border); 
-            align-items: center; 
+
+        /* --- CAJA DE INPUT ESTILO GEMINI --- */
+        .input-container {
+            width: 100%;
+            max-width: 850px;
+            padding: 0 20px 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        
-        .input-wrapper { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        
+
         #file-indicator { 
             display: none; 
             align-items: center; 
             gap: 10px; 
             background: rgba(0, 255, 204, 0.1); 
             border: 1px solid var(--neon-green); 
-            padding: 6px 12px; 
-            border-radius: 5px; 
+            padding: 8px 15px; 
+            border-radius: 15px; 
             font-size: 0.85em; 
             color: var(--neon-green); 
-            width: fit-content; 
-            font-family: 'Segoe UI', sans-serif; 
+            margin-bottom: 10px;
+            align-self: flex-start;
+            margin-left: 20px;
         }
-        #file-indicator button { background: none; border: none; color: #ff4d4d; cursor: pointer; font-weight: bold; font-size: 1.1em; padding: 0 5px; }
-        
-        input[type="text"] { 
-            width: 100%; 
-            background: rgba(255, 255, 255, 0.03); 
-            border: 1px solid var(--glass-border); 
-            color: #fff; 
-            padding: 14px; 
-            border-radius: 10px; 
-            outline: none;
-            font-size: 15px;
-            height: 50px;
-            transition: 0.3s;
-        }
-        
-        .btn-action { 
-            background: var(--neon-purple); 
-            color: white; 
-            border: none; 
-            padding: 0 25px; 
-            cursor: pointer; 
-            border-radius: 10px; 
-            font-weight: bold; 
-            height: 50px;
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1px;
-            font-size: 13px;
-            transition: 0.3s;
-        }
-        .btn-action:hover { filter: brightness(1.15); }
-        
-        .btn-clip { background: none; border: none; font-size: 26px; cursor: pointer; padding: 0 5px; height: 50px; display: flex; align-items: center; justify-content: center; }
-        
-        video { width: 100%; height: 100%; object-fit: cover; border-radius: 15px; }
-        .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; animation: pulse 1.5s infinite; padding-left: 15px; }
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        #file-indicator button { background: none; border: none; color: #ff4d4d; cursor: pointer; font-weight: bold; padding: 0 5px; }
 
+        .input-box {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: rgba(35, 35, 35, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            padding: 8px 12px;
+            transition: 0.3s;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        .input-box:focus-within {
+            background: rgba(45, 45, 45, 0.9);
+            border-color: rgba(0, 255, 204, 0.4);
+        }
+
+        .btn-clip { 
+            background: none; 
+            border: none; 
+            font-size: 22px; 
+            cursor: pointer; 
+            padding: 10px; 
+            color: #aaa;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+        .btn-clip:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+        input[type="text"] { 
+            flex: 1; 
+            background: transparent; 
+            border: none; 
+            color: #fff; 
+            padding: 12px 15px; 
+            outline: none;
+            font-size: 16px;
+        }
+        input[type="text"]::placeholder { color: #888; }
+
+        .btn-action { 
+            background: #fff; 
+            color: #000; 
+            border: none; 
+            padding: 10px 20px; 
+            cursor: pointer; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .btn-action:hover { background: var(--neon-green); }
+
+        .escribiendo { color: var(--neon-green); font-style: italic; font-size: 0.9em; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
         .descarga-dinamica { border: none; color: white; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
         @media (max-width: 768px) {
-            body { overflow-y: auto; }
-            .interfaz-usuario { flex-direction: column; height: auto; padding: 12px; gap: 15px; justify-content: flex-start; }
-            #caja-video { width: 100%; height: 190px; margin-top: 5px; }
-            #caja-chat { width: 100%; height: calc(100vh - 230px); min-height: 400px; }
-            #zona-mensajes { padding: 15px; font-size: 0.95em; }
-            .input-box { padding: 10px; gap: 8px; }
-            input[type="text"] { font-size: 16px; padding: 10px; } 
-            .btn-action { padding: 0 15px; font-size: 11px; }
+            .app-container { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; padding: 15px; flex-direction: row; align-items: center; border-right: none; border-bottom: 1px solid var(--glass-border); gap: 10px; }
+            #caja-video { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 0; }
+            .sidebar-title { display: none; }
+            #menu-versiones { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 5px; }
+            .btn-menu { white-space: nowrap; padding: 8px 12px; }
+            .btn-logout { margin-top: 0; padding: 8px; }
+            .btn-logout span { display: none; } /* Oculta texto en movil, deja solo icono si le pones */
+            .input-box { border-radius: 20px; }
+            #zona-mensajes { padding: 15px; }
         }
     </style>
 </head>
 <body>
     <img id="fondo-nelida" src="versiones_nelida/ayuda.png">
     
-    <div class="interfaz-usuario">
-        <div id="caja-chat" class="contenedor-estetico">
+    <div class="app-container">
+        <aside class="sidebar">
+            <div id="caja-video">
+                <video id="nelida-video" autoplay loop muted playsinline>
+                    <source src="versiones_nelida/cerebronelida.mp4" type="video/mp4">
+                </video>
+            </div>
+            
+            <div class="sidebar-title">VERSIONES DE NÉLIDA</div>
+            <div id="menu-versiones">
+                </div>
+
+            <button class="btn-logout" onclick="window.cerrarSesion()">
+                🚪 <span>Cerrar Sesión</span>
+            </button>
+        </aside>
+
+        <main class="chat-area">
             <div class="status-bar">
-                <div><span id="label-especialidad">SISTEMA NÉLIDA</span></div>
+                <div><span id="label-especialidad" style="color: var(--neon-green);">SISTEMA NÉLIDA</span></div>
                 <div id="contador-ui">Cargando sistema...</div>
             </div>
+            
             <div id="zona-mensajes">
                 <div id="msg-inicial" class="msg-nelida"><b>Nélida:</b> Sincronizando faceta...</div>
             </div>
-            <div class="input-box">
-                <input type="file" id="archivoAdjunto" style="display: none;" accept=".pdf, .xls, .xlsx, .doc, .docx, .txt, image/*">
-                <button type="button" class="btn-clip" onclick="document.getElementById('archivoAdjunto').click()" title="Adjuntar documento">📎</button>
-                
-                <div class="input-wrapper">
-                    <div id="file-indicator">
-                        <span id="file-name">📎 Archivo.pdf</span>
-                        <button onclick="window.quitarArchivo()" title="Quitar archivo">✖</button>
-                    </div>
-                    <input type="text" id="userInput" placeholder="Escribe aquí..." onkeypress="if(event.key==='Enter') enviar()">
+
+            <div class="input-container">
+                <div id="file-indicator">
+                    <span id="file-name">📎 Archivo.pdf</span>
+                    <button onclick="window.quitarArchivo()" title="Quitar archivo">✖</button>
                 </div>
                 
-                <button class="btn-action" onclick="enviar()">ENVIAR</button>
+                <div class="input-box">
+                    <input type="file" id="archivoAdjunto" style="display: none;" accept=".pdf, .xls, .xlsx, .doc, .docx, .txt, image/*">
+                    <button type="button" class="btn-clip" onclick="document.getElementById('archivoAdjunto').click()" title="Adjuntar documento">📎</button>
+                    
+                    <input type="text" id="userInput" placeholder="Escribe un mensaje para Nélida..." onkeypress="if(event.key==='Enter') enviar()">
+                    
+                    <button class="btn-action" onclick="enviar()">Enviar</button>
+                </div>
             </div>
-        </div>
-
-        <div id="caja-video" class="contenedor-estetico">
-            <video id="nelida-video" autoplay loop muted playsinline>
-                <source src="versiones_nelida/cerebronelida.mp4" type="video/mp4">
-            </video>
-        </div>
+        </main>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        // Agregada la importacion de updateDoc
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -272,29 +376,6 @@
 
         let mensajesRestantes = esUsuarioPro ? 2000 : 10; 
 
-        function actualizarContador() {
-            const ui = document.getElementById('contador-ui');
-            if (ui) {
-                if (esUsuarioPro) {
-                    ui.innerText = mensajesRestantes > 500 ? "💎 MODO PRO ACTIVO" : `💎 MODO PRO: ${mensajesRestantes} msng restantes`;
-                    ui.style.color = "var(--neon-purple)";
-                    ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
-                } else {
-                    ui.innerText = `🔋 Créditos de prueba: ${mensajesRestantes}`;
-                    ui.style.color = mensajesRestantes === 0 ? "#ff4d4d" : "var(--neon-green)";
-                    ui.style.textShadow = mensajesRestantes === 0 ? "0 0 10px rgba(255, 77, 77, 0.7)" : "0 0 10px rgba(0, 255, 204, 0.4)";
-                }
-            }
-        }
-        setTimeout(actualizarContador, 200);
-
-        window.botonAudioActivo = null;
-        window.textosAudio = window.textosAudio || {}; 
-
-        let archivoDataBase64 = null;
-        let archivoMimeType = null;
-        let archivoNombre = null;
-
         const mapaFondos = {
             "abogada": "abogada.PNG",
             "artes_marciales": "ARTES MARCIALES MIXTAS.png",
@@ -317,19 +398,94 @@
             "terapia_parejas": "terapia deparejas.PNG"
         };
 
+        // RENDERIZAR MENÚ DINÁMICO
+        function renderizarMenu() {
+            const menu = document.getElementById('menu-versiones');
+            menu.innerHTML = '';
+            for (let faceta in mapaFondos) {
+                const nombreLimpio = faceta.replace(/_/g, ' ').toUpperCase();
+                const claseActiva = (faceta === facetaActiva) ? 'activo' : '';
+                menu.innerHTML += `<button id="btn-${faceta}" class="btn-menu ${claseActiva}" onclick="window.cambiarFaceta('${faceta}')">${nombreLimpio}</button>`;
+            }
+        }
+
+        // FUNCIÓN PARA CAMBIAR VERSIÓN DESDE EL MENÚ
+        window.cambiarFaceta = async (nuevaFaceta) => {
+            facetaActiva = nuevaFaceta;
+            
+            // Actualizar visual de botones
+            document.querySelectorAll('.btn-menu').forEach(btn => btn.classList.remove('activo'));
+            document.getElementById('btn-' + nuevaFaceta).classList.add('activo');
+            
+            // Actualizar encabezados y fondo
+            document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
+            if (mapaFondos[facetaActiva]) {
+                document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
+            }
+            
+            // Reiniciar chat
+            const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
+            document.getElementById('zona-mensajes').innerHTML = `<div id="msg-inicial" class="msg-nelida"><b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.</div>`;
+            historialAcumulado = []; // Limpiamos la memoria para que asuma el nuevo rol
+            
+            // Guardar en Firebase para la próxima vez
+            if (currentUser) {
+                try {
+                    await updateDoc(doc(db, "usuarios", currentUser.uid), {
+                        version_seleccionada: nuevaFaceta
+                    });
+                } catch(e) { console.error("Error guardando nueva faceta en BD", e); }
+            }
+        };
+
+        // FUNCIÓN PARA CERRAR SESIÓN
+        window.cerrarSesion = () => {
+            signOut(auth).then(() => {
+                window.location.href = "login.html";
+            }).catch((error) => {
+                console.error("Error al cerrar sesión", error);
+            });
+        };
+
+        function actualizarContador() {
+            const ui = document.getElementById('contador-ui');
+            if (ui) {
+                if (esUsuarioPro) {
+                    ui.innerText = mensajesRestantes > 500 ? "💎 MODO PRO" : `💎 MODO PRO: ${mensajesRestantes} msng`;
+                    ui.style.color = "var(--neon-purple)";
+                    ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
+                } else {
+                    ui.innerText = `🔋 Créditos: ${mensajesRestantes}`;
+                    ui.style.color = mensajesRestantes === 0 ? "#ff4d4d" : "var(--neon-green)";
+                    ui.style.textShadow = mensajesRestantes === 0 ? "0 0 10px rgba(255, 77, 77, 0.7)" : "0 0 10px rgba(0, 255, 204, 0.4)";
+                }
+            }
+        }
+        setTimeout(actualizarContador, 200);
+
+        window.botonAudioActivo = null;
+        window.textosAudio = window.textosAudio || {}; 
+
+        let archivoDataBase64 = null;
+        let archivoMimeType = null;
+        let archivoNombre = null;
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
                 const docSnap = await getDoc(doc(db, "usuarios", user.uid));
                 if (docSnap.exists()) {
                     facetaActiva = docSnap.data().version_seleccionada || "ayuda";
-                    document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
-                    if (mapaFondos[facetaActiva]) {
-                        document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
-                    }
-                    const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
-                    document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
                 }
+                // Una vez que sabemos la faceta del usuario, renderizamos el menu
+                renderizarMenu();
+                
+                document.getElementById('label-especialidad').innerText = facetaActiva.toUpperCase();
+                if (mapaFondos[facetaActiva]) {
+                    document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva];
+                }
+                const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
+                document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
             } else { window.location.href = "login.html"; }
         });
 
@@ -364,11 +520,11 @@
 
             if (texto === "/Odin2026") {
                 mensajesRestantes = 2000; 
-                esUsuarioPro = true;
-                localStorage.setItem('nelida_pro', 'true');
+                esUsuarioPro = true; 
+                localStorage.setItem('nelida_pro', 'true'); 
                 actualizarContador();
                 input.value = "";
-                zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔓 ACCESO AUTORIZADO: MODO DIOS ACTIVADO.</div>`;
+                zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold;">🔓 ACCESO AUTORIZADO: MODO DIOS ACTIVADO.</div>`;
                 zona.scrollTop = zona.scrollHeight;
                 return;
             }
@@ -376,7 +532,7 @@
             if (texto === "/Reset2026") {
                 localStorage.removeItem('nelida_pro');
                 input.value = "";
-                zona.innerHTML += `<div style="color: #ff4d4d; text-align: center; margin: 15px 0; font-weight: bold; font-family: 'Orbitron', sans-serif;">🔄 MEMORIA BORRADA...</div>`;
+                zona.innerHTML += `<div style="color: #ff4d4d; text-align: center; margin: 15px 0; font-weight: bold;">🔄 MEMORIA BORRADA...</div>`;
                 zona.scrollTop = zona.scrollHeight;
                 setTimeout(() => { window.location.reload(); }, 2000);
                 return;
@@ -387,7 +543,7 @@
                 mensajePantalla += `<br><span style="color:var(--neon-green); font-size:0.85em;">📎 Archivo adjunto: ${archivoNombre}</span>`;
             }
             
-            zona.innerHTML += `<div class="msg-usuario">> ${mensajePantalla}</div>`;
+            zona.innerHTML += `<div class="msg-usuario">${mensajePantalla}</div>`;
             input.value = "";
             zona.scrollTop = zona.scrollHeight;
 
@@ -441,8 +597,8 @@
                     zona.innerHTML += `
                         <div class="msg-nelida">
                             <div id="${idMsgUnico}">${marked.parse(respuesta)}</div>
-                            <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
-                                <button onclick="window.hablar(this, '${idMsgUnico}')" style="background: rgba(0, 255, 204, 0.15); border: 1px solid var(--neon-green); color: white; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s;">
+                            <div style="display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap;">
+                                <button onclick="window.hablar(this, '${idMsgUnico}')" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.85em; transition: 0.3s;">
                                     🔊 Escuchar
                                 </button>
                                 ${botonesGenerados}
@@ -452,7 +608,7 @@
                     if (mensajesRestantes === 0 && !botonesGenerados.includes('OBTENER ACCESO PRO')) {
                         zona.innerHTML += `
                         <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
-                            <button style="background: var(--neon-purple); color: white; border: 1px solid var(--neon-green); padding: 15px 30px; border-radius: 8px; font-family: 'Orbitron', sans-serif; font-weight: bold; cursor: pointer; font-size: 16px;" onclick="window.location.href = 'checkout.html'">
+                            <button style="background: var(--neon-purple); color: white; border: 1px solid var(--neon-green); padding: 15px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 16px;" onclick="window.location.href = 'checkout.html'">
                                 💎 OBTENER ACCESO PRO ILIMITADO
                             </button>
                         </div>`;
@@ -470,7 +626,7 @@
         window.exportarWord = (id) => { const element = document.getElementById(id); const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento</title></head><body>${element.innerHTML}</body></html>`; const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Documento_NelidaAI.doc'; a.click(); };
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
 
-        window.hablar = async (btnElement, idMsgUnico) => {
+       window.hablar = async (btnElement, idMsgUnico) => {
             const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
             if (!esProActual) {
@@ -498,41 +654,24 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ texto: textoLimpio })
                 });
+                const data = await res.json();
                 
-                if (res.ok) {
-                    const contentType = res.headers.get("content-type");
-                    
-                    // Si el servidor le sigue mandando el viejo formato JSON, lo detecta y te avisa:
-                    if (contentType && contentType.includes("application/json")) {
-                        alert("⚠️ DIAGNÓSTICO: El servidor sigue mandando JSON (Base64). Significa que el archivo '/api/hablar' no se actualizó correctamente con el código nuevo o Vercel todavía no lo desplegó.");
-                        btnElement.innerHTML = '🔊 Escuchar';
-                        return;
-                    }
-
-                    // Si llega hasta acá, el servidor está mandando el MP3 veloz correctamente
-                    const blob = await res.blob();
-                    const audioUrl = URL.createObjectURL(blob);
-                    
-                    window.audioNelida = new Audio(audioUrl);
+                if (data.audioBase64) {
+                    window.audioNelida = new Audio("data:audio/mp3;base64," + data.audioBase64);
                     btnElement.innerHTML = '⏹️ Detener';
                     if(cajaVideo) cajaVideo.classList.add('modo-hablando');
-                    
                     window.audioNelida.play();
                     
                     window.audioNelida.onended = () => {
                         btnElement.innerHTML = '🔊 Escuchar';
                         if(cajaVideo) cajaVideo.classList.remove('modo-hablando');
-                        URL.revokeObjectURL(audioUrl); 
                     };
                 } else {
-                    // Si falla el servidor de OpenAI, nos muestra el error real:
-                    const errorDelServidor = await res.text();
-                    alert("⚠️ ERROR EN EL SERVIDOR (Revisar logs):\n" + errorDelServidor);
+                    alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
                     btnElement.innerHTML = '🔊 Escuchar';
                 }
             } catch (e) {
-                // Si falla tu conexión a internet o el fetch:
-                alert("⚠️ ERROR DE CONEXIÓN:\nNo se pudo contactar al servidor. Detalles: " + e.message);
+                alert("⏳ Nélida está procesando demasiadas solicitudes de voz en este momento. Por favor, lee la respuesta en texto e intenta el audio en unos minutos.");
                 btnElement.innerHTML = '🔊 Escuchar';
             }
         };
