@@ -38,3 +38,35 @@ body {
     z-index: 10;
     outline: none;
 }
+
+/* --- INICIO DEL MOTOR ADAPTATIVO MÓVIL (ESTILO WHATSAPP) --- */
+@media (max-width: 480px) {
+    /* Fuerza a la pantalla a ocupar el 100% del espacio del celular */
+    .contenedor-principal-chat, main, section {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+    }
+
+    /* Fija la caja de escritura en la base de la pantalla */
+    .caja-de-texto-envio, footer, form {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        background-color: #ffffff !important;
+        z-index: 9999 !important;
+        padding: 10px !important;
+        box-shadow: 0px -2px 10px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Espacio libre para que el teclado no tape los mensajes */
+    .zona-de-mensajes, ul, div.messages {
+        padding-bottom: 80px !important;
+        overflow-y: auto !important;
+    }
+}
+/* --- FIN DEL MOTOR ADAPTATIVO --- */
