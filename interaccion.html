@@ -288,17 +288,21 @@
         @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
         .descarga-dinamica { border: none; color: white; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
-        @media (max-width: 768px) {
-            .app-container { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; padding: 15px; flex-direction: row; align-items: center; border-right: none; border-bottom: 1px solid var(--glass-border); gap: 10px; }
-            #caja-video { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 0; }
+       @media (max-width: 768px) {
+            .app-container { flex-direction: column; height: 100vh; overflow: hidden; }
+            .sidebar { width: 100%; height: auto; padding: 10px 15px; flex-direction: row; align-items: center; border-right: none; border-bottom: 1px solid var(--glass-border); gap: 10px; flex-shrink: 0; background: rgba(10,10,10,0.9); z-index: 100; }
+            #caja-video { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 0; }
             .sidebar-title { display: none; }
-            #menu-versiones { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 5px; }
-            .btn-menu { white-space: nowrap; padding: 8px 12px; }
+            #menu-versiones { flex-direction: row; overflow-x: auto; overflow-y: hidden; padding-bottom: 0; align-items: center; }
+            .btn-menu { white-space: nowrap; padding: 6px 10px; font-size: 0.85em; }
             .btn-logout { margin-top: 0; padding: 8px; }
             .btn-logout span { display: none; }
-            .input-box { border-radius: 20px; }
-            #zona-mensajes { padding: 15px; }
+            
+            /* --- FORMATO WHATSAPP --- */
+            .chat-area { height: 100%; justify-content: flex-start; position: relative; }
+            #zona-mensajes { padding: 15px; padding-bottom: 100px !important; height: 100%; overflow-y: auto; }
+            .input-container { position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; padding: 10px 15px !important; background: rgba(10,10,10,0.98) !important; z-index: 9999 !important; border-top: 1px solid #333; }
+            .input-box { border-radius: 20px; margin-bottom: 0; min-height: 45px; }
         }
     </style>
 </head>
