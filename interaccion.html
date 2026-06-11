@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nélida AI - Interface Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
@@ -26,7 +26,7 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             color: #fff; 
             height: 100vh;
-            overflow: hidden; /* Evita el scroll en toda la pagina, solo en el chat */
+            overflow: hidden; 
         }
         
         /* Imagen de fondo dinámica */
@@ -187,7 +187,7 @@
             margin-left: auto;
             text-align: left;
             color: #fff;
-            white-space: pre-wrap; /* Permite que los saltos de línea se vean en el mensaje */
+            white-space: pre-wrap; 
         }
 
         .msg-nelida {
@@ -224,11 +224,11 @@
 
         .input-box {
             display: flex;
-            align-items: flex-end; /* Alinea los botones al fondo cuando la caja crece */
+            align-items: flex-end; 
             width: 100%;
             background: rgba(35, 35, 35, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 25px; /* Ajustado para que el textarea cuadre mejor */
+            border-radius: 25px; 
             padding: 8px 12px;
             transition: 0.3s;
             box-shadow: 0 5px 20px rgba(0,0,0,0.3);
@@ -248,7 +248,7 @@
             color: #aaa;
             transition: 0.2s;
             border-radius: 50%;
-            margin-bottom: 2px; /* Alineación con el textarea */
+            margin-bottom: 2px; 
         }
         .btn-clip:hover { color: #fff; background: rgba(255,255,255,0.1); }
 
@@ -280,7 +280,7 @@
             font-weight: bold; 
             font-size: 14px;
             transition: 0.2s;
-            margin-bottom: 5px; /* Alineación con el textarea */
+            margin-bottom: 5px; 
         }
         .btn-action:hover { background: var(--neon-green); }
 
@@ -288,8 +288,9 @@
         @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
         .descarga-dinamica { border: none; color: white; padding: 10px 18px; border-radius: 5px; cursor: pointer; font-size: 0.85em; font-family: 'Orbitron', sans-serif; transition: 0.3s; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
 
-       @media (max-width: 768px) {
-            .app-container { flex-direction: column; height: 100vh; overflow: hidden; }
+        /* --- MOTOR ADAPTATIVO MÓVIL CORREGIDO --- */
+        @media (max-width: 768px) {
+            .app-container { flex-direction: column; height: 100vh; overflow: hidden; width: 100vw; }
             .sidebar { width: 100%; height: auto; padding: 10px 15px; flex-direction: row; align-items: center; border-right: none; border-bottom: 1px solid var(--glass-border); gap: 10px; flex-shrink: 0; background: rgba(10,10,10,0.9); z-index: 100; }
             #caja-video { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 0; }
             .sidebar-title { display: none; }
@@ -298,11 +299,24 @@
             .btn-logout { margin-top: 0; padding: 8px; }
             .btn-logout span { display: none; }
             
-            /* --- FORMATO WHATSAPP --- */
-            .chat-area { height: 100%; justify-content: flex-start; position: relative; }
-            #zona-mensajes { padding: 15px; padding-bottom: 100px !important; height: 100%; overflow-y: auto; }
-            .input-container { position: fixed !important; bottom: 0 !important; left: 0 !important; width: 100% !important; padding: 10px 15px !important; background: rgba(10,10,10,0.98) !important; z-index: 9999 !important; border-top: 1px solid #333; }
-            .input-box { border-radius: 20px; margin-bottom: 0; min-height: 45px; }
+            /* --- FORMATO WHATSAPP RECALIBRADO --- */
+            .chat-area { height: 100%; justify-content: flex-start; position: relative; width: 100%; }
+            
+            /* Aseguramos que los mensajes no queden tapados por la caja de texto */
+            #zona-mensajes { padding: 15px; padding-bottom: 140px !important; height: 100%; overflow-y: auto; width: 100%; }
+            
+            /* Respetamos la barra de navegación del celular (Safe Area) */
+            .input-container { 
+                position: fixed !important; 
+                bottom: 0 !important; 
+                left: 0 !important; 
+                width: 100% !important; 
+                padding: 15px 15px calc(20px + env(safe-area-inset-bottom)) 15px !important; 
+                background: rgba(10,10,10,0.98) !important; 
+                z-index: 9999 !important; 
+                border-top: 1px solid #333; 
+            }
+            .input-box { border-radius: 20px; margin-bottom: 0; min-height: 45px; width: 100%; }
         }
     </style>
 </head>
