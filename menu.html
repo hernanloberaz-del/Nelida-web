@@ -8,7 +8,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        import { getFirestore, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        // CAMBIO TÁCTICO: Cambiamos updateDoc por setDoc para evitar crasheos con cuentas viejas
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -33,16 +34,10 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.get('validar') === 'NelidaAI_Pro_Suscripcion_Segura_2026_X') {
                     try {
-                        // 1. Actualiza a PRO en tu base de datos Firebase
-                        await updateDoc(doc(db, "usuarios", user.uid), { plan: "PRO" });
-                        
-                        // 2. Guarda el estado en la memoria del navegador
+                        // Usamos setDoc con merge por seguridad
+                        await setDoc(doc(db, "usuarios", user.uid), { plan: "PRO" }, { merge: true });
                         localStorage.setItem('nelida_plan', 'PRO');
-                        
-                        // 3. Borra la clave secreta de la barra al instante para que sea invisible
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        
-                        // 4. Cartel de confirmación al usuario
                         alert("¡Pago exitoso! Ya tenés Nélida PRO activado.");
                         window.location.reload();
                     } catch (error) { 
@@ -109,9 +104,13 @@
             const btn = document.querySelector('.btn-confirmar');
             btn.innerText = "CARGANDO...";
             try {
-                await updateDoc(doc(db, "usuarios", usuarioActual.uid), { version_seleccionada: seleccionada });
+                // COMANDO BLINDADO: Si el usuario no tiene datos previos, se los crea sin tirar error.
+                await setDoc(doc(db, "usuarios", usuarioActual.uid), { version_seleccionada: seleccionada }, { merge: true });
                 window.location.href = "interaccion.html"; 
-            } catch (e) { btn.innerText = "ERROR, REINTENTAR"; }
+            } catch (e) { 
+                console.error(e);
+                btn.innerText = "ERROR, REINTENTAR"; 
+            }
         };
     </script>
 
@@ -119,16 +118,39 @@
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Segoe+UI&display=swap');
         :root { --neon-green: #00ffcc; --neon-purple: #8e44ad; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background-color: #050505; background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%); color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); margin-bottom: 30px; font-size: 2.2em; letter-spacing: 3px; }
-        .ruleta-container { position: relative; width: 380px; height: 520px; display: flex; align-items: center; justify-content: center; }
+        
+        /* CORRECCIÓN DE PANTALLA: Se adapta al alto, pero oculta desbordes horizontales */
+        body { 
+            background-color: #050505; 
+            background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%); 
+            color: white; 
+            font-family: 'Segoe UI', sans-serif; 
+            min-height: 100vh; 
+            overflow-x: hidden;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px;
+        }
+        
+        h1 { font-family: 'Orbitron', sans-serif; color: var(--neon-green); margin-bottom: 20px; font-size: 2em; letter-spacing: 2px; text-align: center;}
+        
+        /* CORRECCIÓN DE CAJA: Tamaño elástico, nunca superará el ancho del celular */
+        .ruleta-container { position: relative; width: 100%; max-width: 320px; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
         .img-principal { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; border: 1px solid rgba(0, 255, 204, 0.3); }
-        .flecha { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: 1px solid rgba(0, 255, 204, 0.3); color: var(--neon-green); font-size: 28px; cursor: pointer; border-radius: 50%; width: 55px; height: 55px; z-index: 10; }
-        .flecha-izq { left: -70px; } .flecha-der { right: -70px; }
-        .info-faceta { text-align: center; margin-top: 30px; }
-        #nombre-faceta { font-family: 'Orbitron'; font-size: 1.5em; }
-        #desc-faceta { color: var(--neon-purple); font-weight: bold; margin-top: 8px; }
-        .btn-confirmar { margin-top: 20px; background: var(--neon-purple); color: white; padding: 15px 50px; border-radius: 30px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; border: none; }
+        
+        /* CORRECCIÓN DE FLECHAS: Colocadas en el borde interno, sin romper la pantalla */
+        .flecha { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.75); border: 1px solid rgba(0, 255, 204, 0.5); color: var(--neon-green); font-size: 24px; cursor: pointer; border-radius: 50%; width: 45px; height: 45px; z-index: 10; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);}
+        .flecha-izq { left: -15px; } 
+        .flecha-der { right: -15px; }
+        
+        .info-faceta { text-align: center; margin-top: 25px; padding: 0 10px; }
+        #nombre-faceta { font-family: 'Orbitron'; font-size: 1.4em; }
+        #desc-faceta { color: var(--neon-purple); font-weight: bold; margin-top: 5px; font-size: 0.9em; }
+        
+        .btn-confirmar { margin-top: 20px; background: var(--neon-purple); color: white; padding: 15px 40px; border-radius: 30px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; border: none; font-size: 1.1em; box-shadow: 0 4px 15px rgba(142,68,173,0.3); transition: 0.3s;}
+        .btn-confirmar:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
