@@ -5,7 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nélida AI - Inicio</title>
     <link rel="stylesheet" href="style.css">
-</head>
+    
+    <script>
+        // Si el sistema detecta que es un celular o la pantalla es pequeña, salta instantáneamente al login
+        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
+            window.location.replace('login.html');
+        }
+    </script>
+    </head>
 <body>
 
     <main class="contenedor-unico">
@@ -16,7 +23,7 @@
 
     <script>
         function irALogin() {
-            // Lógica de redirección original
+            // Lógica de redirección original para usuarios en computadora
             window.location.href = 'login.html';
         }
     </script>
