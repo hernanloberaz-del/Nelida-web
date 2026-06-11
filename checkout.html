@@ -2,304 +2,134 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Suscripción Nélida PRO - Pago Seguro</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --neon-green: #00ffcc;
             --neon-purple: #8e44ad;
-            --glass-bg: rgba(0, 0, 0, 0.75);
+            --glass-bg: rgba(0, 0, 0, 0.85);
             --glass-border: rgba(0, 255, 204, 0.3);
             --text-main: #ffffff;
             --text-muted: #aaaaaa;
-            --error-red: #ff4d4d;
         }
 
         body {
             margin: 0;
-            padding: 0;
+            padding: 20px;
             background-color: #050505;
             background-image: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #000000 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             color: var(--text-main);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            overflow-x: hidden;
         }
 
         .checkout-container {
             display: flex;
-            width: 900px;
-            max-width: 95%;
+            flex-direction: column; /* Apilado en móvil */
+            width: 100%;
+            max-width: 500px; /* Ancho máximo total para móvil */
             background: var(--glass-bg);
-            backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
             border-radius: 20px;
-            box-shadow: 0 0 40px rgba(0, 255, 204, 0.1);
             overflow: hidden;
-            flex-wrap: wrap;
         }
 
-        /* PANEL IZQUIERDO - RESUMEN */
-        .summary-panel {
+        @media (min-width: 768px) {
+            .checkout-container { flex-direction: row; max-width: 900px; }
+        }
+
+        /* PANELES */
+        .summary-panel, .payment-panel {
             flex: 1;
-            min-width: 300px;
+            padding: 30px;
+        }
+
+        .summary-panel {
             background: linear-gradient(135deg, rgba(142,68,173,0.2) 0%, rgba(0,0,0,0) 100%);
-            padding: 40px;
-            border-right: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
-        .summary-panel h1 {
-            font-family: 'Orbitron', sans-serif;
-            color: var(--neon-green);
-            margin-top: 0;
-            font-size: 1.8em;
-            letter-spacing: 2px;
+        @media (min-width: 768px) {
+            .summary-panel { border-bottom: none; border-right: 1px solid rgba(255,255,255,0.1); }
         }
 
-        .price-tag {
-            font-size: 2.4em;
-            font-weight: bold;
-            margin: 15px 0;
-            color: #fff;
-            line-height: 1.2;
-        }
+        h1, h2 { font-family: 'Orbitron', sans-serif; }
+        h1 { color: var(--neon-green); font-size: 1.5em; letter-spacing: 1px; }
 
-        .price-tag span {
-            font-size: 0.45em;
-            color: var(--text-muted);
-            font-weight: normal;
-            display: block;
-            margin-top: 5px;
-        }
+        .price-tag { font-size: 1.8em; font-weight: bold; margin: 15px 0; }
+        .price-tag span { font-size: 0.5em; color: var(--text-muted); display: block; }
 
-        .benefits-list {
-            list-style: none;
-            padding: 0;
-            margin-top: 20px;
-            margin-bottom: 30px;
-        }
+        .benefits-list { list-style: none; padding: 0; margin: 20px 0; font-size: 0.95em; }
+        .benefits-list li { margin-bottom: 10px; display: flex; align-items: center; }
+        .benefits-list li::before { content: '✓'; color: var(--neon-green); margin-right: 10px; }
 
-        .benefits-list li {
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            font-size: 1.05em;
-        }
+        .payment-methods { display: flex; gap: 10px; margin-bottom: 20px; }
+        .method-btn { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 0.8em; }
+        .method-btn.active { border-color: var(--neon-purple); background: rgba(142, 68, 173, 0.2); }
 
-        .benefits-list li::before {
-            content: '✓';
-            color: var(--neon-green);
-            font-weight: bold;
-            margin-right: 10px;
-            font-size: 1.2em;
-        }
+        .pay-box { display: none; }
+        .pay-box.active-box { display: block; }
 
-        .free-trial-banner {
-            border-top: 1px dashed rgba(0, 255, 204, 0.3);
-            padding-top: 20px;
-            margin-top: auto;
-        }
-
-        /* PANEL DERECHO - FORMULARIO DE PAGO */
-        .payment-panel {
-            flex: 1.2;
-            min-width: 350px;
-            padding: 40px;
-            position: relative;
-        }
-
-        .payment-panel h2 {
-            font-family: 'Orbitron', sans-serif;
-            margin-top: 0;
-            margin-bottom: 25px;
-            font-size: 1.4em;
-            color: #fff;
-        }
-
-        /* GRILLA DE MÉTODOS DE PAGO */
-        .payment-methods {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-bottom: 30px;
-        }
-
-        @media (min-width: 480px) {
-            .payment-methods {
-                grid-template-columns: 1fr 1fr 1fr;
-            }
-        }
-
-        .method-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 12px 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-            font-weight: bold;
-            font-size: 0.85em;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
-        .method-btn:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .method-btn.active {
-            border-color: var(--neon-purple);
-            background: rgba(142, 68, 173, 0.2);
-            box-shadow: 0 0 10px rgba(142, 68, 173, 0.3);
-        }
-
-        /* CAJAS DE PAGO DINÁMICAS */
-        .pay-box {
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .pay-box.active-box {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .pay-btn {
-            display: block;
-            width: 100%;
-            text-align: center;
-            text-decoration: none;
-            box-sizing: border-box;
-            color: #fff;
-            border: none;
-            padding: 18px;
-            border-radius: 8px;
-            font-size: 1.1em;
-            font-weight: bold;
-            font-family: 'Orbitron', sans-serif;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn-mp-link { background: #009EE3; box-shadow: 0 4px 15px rgba(0, 158, 227, 0.3); }
-        .btn-mp-link:hover { background: #0088c4; transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0, 158, 227, 0.5); }
-
-        .secure-badge {
-            text-align: center;
-            margin-top: 35px;
-            font-size: 0.85em;
-            color: var(--text-muted);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 5px;
-        }
+        .pay-btn { display: block; width: 100%; text-align: center; color: #fff; background: #009EE3; padding: 15px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 15px; }
+        
+        .secure-badge { text-align: center; margin-top: 20px; font-size: 0.75em; color: var(--text-muted); }
     </style>
 </head>
 <body>
 
     <div class="checkout-container">
         <div class="summary-panel">
-            <div>
-                <h1>NÉLIDA PRO</h1>
-                <p style="color: var(--text-muted); line-height: 1.5; margin-bottom: 5px;">Desbloqueá el potencial completo de tu asistente de IA especializado.</p>
-                
-                <div class="price-tag">
-                    $13.999 <span style="font-size: 0.4em; display:inline;">ARS / mes</span>
-                    <span style="font-size: 0.5em; color: var(--neon-green);">o $9.99 USD / mes (Exterior)</span>
-                </div>
-
-                <ul class="benefits-list">
-                    <li>Mensajes ilimitados 24/7</li>
-                    <li>Generación de reportes PDF</li>
-                    <li>Creación de planillas Excel</li>
-                    <li>Presentaciones PowerPoint (PPT)</li>
-                    <li>Memoria de contexto extendida</li>
-                    <li>Soporte prioritario</li>
-                </ul>
+            <h1>NÉLIDA PRO</h1>
+            <div class="price-tag">
+                $13.999 ARS <span>/ mes (o $9.99 USD Exterior)</span>
             </div>
-
-            <div class="free-trial-banner">
-                <p style="margin: 0; color: var(--neon-green); font-family: 'Orbitron', sans-serif; font-size: 0.9em; font-weight: bold;">¿Querés probar primero?</p>
-                <p style="margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.85em;">Obtené 10 créditos de prueba sin compromiso.</p>
-            </div>
+            <ul class="benefits-list">
+                <li>Mensajes ilimitados</li>
+                <li>Reportes PDF y Excel</li>
+                <li>Presentaciones PPT</li>
+                <li>Soporte prioritario</li>
+            </ul>
         </div>
 
         <div class="payment-panel">
-            <h2>Elegí tu método de pago</h2>
-            
+            <h2>Pago</h2>
             <div class="payment-methods">
-                <button type="button" class="method-btn active" onclick="mostrarMetodo('mp', this)">🤝 Mercado Pago</button>
-                <button type="button" class="method-btn" onclick="mostrarMetodo('paypal', this)">🅿️ PayPal</button>
-                <button type="button" class="method-btn" onclick="window.location.href='menu.html'" style="border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 8px rgba(0, 255, 204, 0.2);">🎁 Plan Gratis (10 Msjs)</button>
+                <button type="button" class="method-btn active" onclick="mostrarMetodo('mp', this)">MP</button>
+                <button type="button" class="method-btn" onclick="mostrarMetodo('paypal', this)">PayPal</button>
+                <button type="button" class="method-btn" onclick="window.location.href='menu.html'">Gratis</button>
             </div>
 
             <div id="mp-box" class="pay-box active-box">
-                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Serás redirigido a la plataforma segura de Mercado Pago. Podés adherir tu tarjeta de crédito o débito para activar tu suscripción.</p>
-                <a href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=498087b7b10645b79fb5b314ac870bd8" class="pay-btn btn-mp-link">Suscribirse por $13.999 ARS</a>
-                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual local</p>
+                <a href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=498087b7b10645b79fb5b314ac870bd8" class="pay-btn">Suscribirse con MP</a>
             </div>
 
             <div id="paypal-box" class="pay-box">
-                <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5; margin-bottom: 20px;">Pagá de forma rápida y segura desde cualquier parte del mundo utilizando tu saldo de PayPal o tarjetas internacionales.</p>
                 <div id="paypal-button-container-P-1KW822034C763352DNIGHICQ"></div>
-                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual internacional ($9.99 USD)</p>
             </div>
 
-            <div class="secure-badge">
-                🔒 Pagos cifrados de extremo a extremo con seguridad bancaria.
-            </div>
+            <div class="secure-badge">🔒 Pagos seguros y cifrados.</div>
         </div>
     </div>
 
     <script>
-        function mostrarMetodo(metodo, botonSeleccionado) {
-            const botones = document.querySelectorAll('.method-btn');
-            botones.forEach(btn => btn.classList.remove('active'));
-            
-            botonSeleccionado.classList.add('active');
-
-            const cajas = document.querySelectorAll('.pay-box');
-            cajas.forEach(caja => caja.classList.remove('active-box'));
-
+        function mostrarMetodo(metodo, boton) {
+            document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+            boton.classList.add('active');
+            document.querySelectorAll('.pay-box').forEach(c => c.classList.remove('active-box'));
             document.getElementById(metodo + '-box').classList.add('active-box');
         }
     </script>
-
-    <script src="https://www.paypal.com/sdk/js?client-id=BAAN4ARxixrtl7daE3GLRBgtiK7hMYdixmNIY4KHn3gJedt9O69N4MpRFuVL9HTXI0e0I4q9Q5qpYd0mRI&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=BAAN4ARxixrtl7daE3GLRBgtiK7hMYdixmNIY4KHn3gJedt9O69N4MpRFuVL9HTXI0e0I4q9Q5qpYd0mRI&vault=true&intent=subscription"></script>
     <script>
         paypal.Buttons({
-            style: {
-                shape: 'pill',
-                color: 'blue',
-                layout: 'vertical',
-                label: 'subscribe'
-            },
-            createSubscription: function(data, actions) {
-                return actions.subscription.create({
-                    plan_id: 'P-1KW822034C763352DNIGHICQ'
-                });
-            },
-            onApprove: function(data, actions) {
-                // ACA ESTÁ EL CAMBIO DE SEGURIDAD PARA PAYPAL
-                window.location.href = 'menu.html?validar=NelidaAI_Pro_Suscripcion_Segura_2026_X';
-            }
+            createSubscription: (data, actions) => actions.subscription.create({ plan_id: 'P-1KW822034C763352DNIGHICQ' }),
+            onApprove: () => window.location.href = 'menu.html?validar=NelidaAI_Pro_Suscripcion_Segura_2026_X'
         }).render('#paypal-button-container-P-1KW822034C763352DNIGHICQ');
     </script>
 </body>
