@@ -650,11 +650,104 @@
             zona.scrollTop = zona.scrollHeight;
         };
 
-        window.exportarPDF = (id) => { const element = document.getElementById(id); const clone = element.cloneNode(true); clone.style.color = '#000'; clone.style.backgroundColor = '#fff'; clone.style.padding = '30px'; const opt = { margin: 15, filename: 'Reporte_NelidaAI.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }; html2pdf().set(opt).from(clone).save(); };
-        window.exportarExcel = (id) => { const element = document.getElementById(id); const tablaHtml = element.querySelector('table'); let libroExcel; if (tablaHtml) { libroExcel = XLSX.utils.table_to_book(tablaHtml); } else { const lineas = []; element.querySelectorAll('p, li, h1, h2, h3').forEach(el => { lineas.push([el.innerText]); }); const hoja = XLSX.utils.aoa_to_sheet(lineas); libroExcel = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(libroExcel, hoja, "Datos"); } XLSX.writeFile(libroExcel, 'Planilla_NelidaAI.xlsx'); };
+       // --- MOTOR DE EXPORTACIÓN PDF (VERSIÓN CORPORATIVA) ---
+        window.exportarPDF = (id) => { 
+            const element = document.getElementById(id); 
+            const clone = element.cloneNode(true); 
+            
+            const header = document.createElement('div');
+            header.innerHTML = `
+                <div style="border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <h2 style="color: #111; font-family: 'Segoe UI', sans-serif; margin: 0; text-transform: uppercase;">Nélida AI // Reporte Oficial</h2>
+                    <span style="color: #555; font-size: 12px; font-weight: bold;">Fecha: ${new Date().toLocaleDateString('es-AR')}</span>
+                </div>
+            `;
+            clone.insertBefore(header, clone.firstChild);
+
+            clone.style.color = '#222'; 
+            clone.style.backgroundColor = '#fff'; 
+            clone.style.padding = '40px'; 
+            clone.style.fontFamily = 'Arial, sans-serif';
+            clone.style.fontSize = '14px';
+            clone.style.lineHeight = '1.6';
+
+            const tablas = clone.querySelectorAll('table');
+            tablas.forEach(tabla => {
+                tabla.style.width = '100%';
+                tabla.style.borderCollapse = 'collapse';
+                tabla.style.margin = '20px 0';
+                
+                tabla.querySelectorAll('th, td').forEach(celda => {
+                    celda.style.border = '1px solid #ccc';
+                    celda.style.padding = '12px';
+                    celda.style.textAlign = 'left';
+                });
+                
+                tabla.querySelectorAll('th').forEach(th => {
+                    th.style.backgroundColor = '#f4f4f4';
+                    th.style.color = '#000';
+                    th.style.fontWeight = 'bold';
+                    th.style.textTransform = 'uppercase';
+                });
+            });
+
+            const opt = { 
+                margin: 0, 
+                filename: 'Reporte_Estrategico_Nelida.pdf', 
+                image: { type: 'jpeg', quality: 0.98 }, 
+                html2canvas: { scale: 2 }, 
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } 
+            }; 
+            
+            html2pdf().set(opt).from(clone).save(); 
+        };
+
+        // --- MOTOR DE EXPORTACIÓN EXCEL (VERSIÓN CORPORATIVA) ---
+        window.exportarExcel = (id) => { 
+            const element = document.getElementById(id); 
+            const tablaHtml = element.querySelector('table'); 
+            let libroExcel = XLSX.utils.book_new(); 
+            
+            let matrizDatos = [];
+            
+            matrizDatos.push(["NÉLIDA AI - REPORTE ESTRATÉGICO"]);
+            matrizDatos.push(["Generado el:", new Date().toLocaleString('es-AR')]);
+            matrizDatos.push([]); 
+
+            if (tablaHtml) { 
+                const filas = tablaHtml.querySelectorAll('tr');
+                filas.forEach(fila => {
+                    let arrayFila = [];
+                    fila.querySelectorAll('th, td').forEach(celda => {
+                        arrayFila.push(celda.innerText);
+                    });
+                    matrizDatos.push(arrayFila);
+                });
+            } else { 
+                element.querySelectorAll('p, li, h1, h2, h3').forEach(el => { 
+                    matrizDatos.push([el.innerText]); 
+                }); 
+            } 
+            
+            const hoja = XLSX.utils.aoa_to_sheet(matrizDatos); 
+
+            const anchosColumnas = matrizDatos.reduce((acc, fila) => {
+                fila.forEach((celda, i) => {
+                    const largo = celda ? celda.toString().length : 10;
+                    acc[i] = Math.max(acc[i] || 15, largo + 2);
+                });
+                return acc;
+            }, []);
+            
+            hoja['!cols'] = anchosColumnas.map(w => ({ wch: Math.min(w, 80) }));
+
+            XLSX.utils.book_append_sheet(libroExcel, hoja, "Reporte Oficial"); 
+            XLSX.writeFile(libroExcel, 'Reporte_Estrategico_Nelida.xlsx'); 
+        };
+
+        // --- MOTORES WORD Y PPT (INTACTOS) ---
         window.exportarWord = (id) => { const element = document.getElementById(id); const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento</title></head><body>${element.innerHTML}</body></html>`; const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Documento_NelidaAI.doc'; a.click(); };
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
-
        window.hablar = async (btnElement, idMsgUnico) => {
             const esProActual = localStorage.getItem('nelida_pro') === 'true';
             
