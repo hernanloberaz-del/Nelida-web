@@ -10,6 +10,7 @@
             --neon-green: #00ffcc;
             --neon-purple: #8e44ad;
             --neon-blue: #00d2ff;
+            --neon-gold: #ffcc00;
             --glass-bg: rgba(10, 10, 10, 0.9);
             --glass-border: rgba(0, 255, 204, 0.15);
             --bg-dark: #030303;
@@ -34,7 +35,7 @@
         .btn-logout { background: transparent; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-family: 'Orbitron', sans-serif; font-size: 12px; transition: 0.3s; }
         .btn-logout:hover { background: #ff4d4d; color: #fff; box-shadow: 0 0 15px rgba(255, 77, 77, 0.4); }
 
-        .grid-metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .grid-metricas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
         .card-metrica { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 12px; padding: 20px; box-shadow: 0 0 20px rgba(0, 255, 204, 0.02); transition: transform 0.3s; }
         .card-metrica:hover { transform: translateY(-3px); }
         .card-metrica h3 { font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-bottom: 10px; text-transform: uppercase; }
@@ -43,6 +44,7 @@
         .card-metrica.consumo .valor { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
         .card-metrica.creditos .valor { color: var(--neon-green); text-shadow: 0 0 10px rgba(0, 255, 204, 0.4); }
         .card-metrica.errores .valor { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0, 210, 255, 0.4); }
+        .card-metrica.visitas .valor { color: var(--neon-gold); text-shadow: 0 0 10px rgba(255, 204, 0, 0.4); }
 
         .seccion-panel { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 25px; margin-bottom: 30px; box-shadow: 0 0 30px rgba(0, 0, 0, 0.5); }
         .seccion-panel h2 { font-size: 18px; margin-bottom: 20px; color: #fff; border-left: 4px solid var(--neon-blue); padding-left: 12px; }
@@ -84,6 +86,13 @@
         </div>
 
         <div class="grid-metricas">
+            <div class="card-metrica visitas">
+                <h3>Visitas Totales Web</h3>
+                <div id="metric-visitas-totales" class="valor">0</div>
+                <div style="font-size: 11px; color: #888; margin-top: 5px; font-family: monospace;">
+                    Impactos brutos en Login
+                </div>
+            </div>
             <div class="card-metrica pro">
                 <h3>Usuarios PRO Activos</h3>
                 <div id="metric-usuarios-pro" class="valor">0</div>
@@ -97,16 +106,16 @@
                 <div id="metric-saldo-api" class="valor">$10.00</div>
             </div>
             <div class="card-metrica errores">
-                <h3>Total Usuarios Únicos</h3>
+                <h3>Total Interacciones Únicas</h3>
                 <div id="metric-usuarios-totales" class="valor">0</div>
                 <div style="font-size: 11px; color: #888; margin-top: 5px; font-family: monospace;">
-                    Logueados: <span id="metric-logueados" style="color: var(--neon-green);">0</span> | Free: <span id="metric-anonimos" style="color: #fff;">0</span>
+                    Logueados: <span id="metric-logueados" style="color: var(--neon-green);">0</span> | Anon: <span id="metric-anonimos" style="color: #fff;">0</span>
                 </div>
             </div>
         </div>
 
         <div class="seccion-panel">
-            <h2>Registro en Tiempo Real</h2>
+            <h2>Registro en Tiempo Real (Usuarios Interactuando)</h2>
             <div class="contenedor-tabla">
                 <table>
                     <thead>
@@ -177,7 +186,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        // CAMBIO: Importamos 'doc' para poder escuchar el documento único de analítica
+        import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         if (localStorage.getItem('admin_autorizado') !== 'true') {
             window.location.href = 'login.html';
@@ -209,6 +219,20 @@
             return fecha.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
 
+        // CAMBIO: Nueva función encargada de escuchar los impactos brutos en analitica/visitas
+        function iniciarRadarVisitasBrutas() {
+            try {
+                onSnapshot(doc(db, "analitica", "visitas"), (docSnap) => {
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        document.getElementById('metric-visitas-totales').innerText = data.total || 0;
+                    }
+                });
+            } catch (error) {
+                console.error("Error en el Radar de Visitas Brutas:", error);
+            }
+        }
+
         function iniciarRadarPanel() {
             try {
                 const tabla = document.getElementById('tabla-usuarios-body');
@@ -219,7 +243,6 @@
                     let consultasGeminiTotales = 0;
                     let caracteresOpenAITotales = 0;
 
-                    // Variables para el conteo de usuarios únicos
                     let correosUnicos = new Set();
                     let usuariosFreeSinCorreo = 0;
 
@@ -249,7 +272,6 @@
                         const emailUser = data.email || "";
                         const esAnonimo = emailUser.trim() === "";
                         
-                        // LÓGICA DE CONTEO ÚNICO
                         if (!esAnonimo && emailUser.includes('@')) {
                             correosUnicos.add(emailUser.toLowerCase().trim());
                         } else {
@@ -289,7 +311,6 @@
                         tabla.appendChild(fila);
                     });
 
-                    // CÁLCULOS FINANCIEROS Y DE USUARIOS
                     const totalLogueados = correosUnicos.size;
                     const totalUsuariosReales = totalLogueados + usuariosFreeSinCorreo;
 
@@ -299,7 +320,6 @@
                     const fondoInicialPrecompra = 10.00;
                     const saldoRestanteAPI = fondoInicialPrecompra - costoTotalGlobal;
 
-                    // ACTUALIZACIÓN DE TARJETAS
                     document.getElementById('metric-usuarios-pro').innerText = contPro;
                     
                     document.getElementById('metric-usuarios-totales').innerText = totalUsuariosReales;
@@ -327,7 +347,9 @@
             }
         }
 
+        // Ejecución de ambos radares
         iniciarRadarPanel();
+        iniciarRadarVisitasBrutas();
     </script>
 </body>
 </html>
