@@ -69,12 +69,6 @@
             const pass = document.getElementById('pass').value;
             
             if(!email || !pass) return alert("Por favor, completa los campos.");
-            
-            if (email === "NELIDA.AR" && pass === "/Odin2026") {
-                localStorage.setItem('admin_autorizado', 'true');
-                window.location.href = "control.html";
-                return;
-            }
 
             try {
                 const result = await signInWithEmailAndPassword(auth, email, pass);
@@ -101,7 +95,6 @@
         .btn-ir-registro { background: transparent; color: #00ffcc; border: 1px dashed #00ffcc; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-transform: uppercase; text-align: center; text-decoration: none; margin-top: 5px; }
         .btn-ir-registro:hover { background: rgba(0, 255, 204, 0.1); }
         
-        /* BLOQUE LEGAL AÑADIDO PARA CUMPLIR CON GOOGLE */
         .legal-footer {
             margin-top: 10px;
             text-align: center;
@@ -132,7 +125,7 @@
                 Continuar con Facebook
             </button>
             <div class="form-auth">
-                <input type="text" id="email" placeholder="Tu correo electrónico o Usuario Admin">
+                <input type="text" id="email" placeholder="Tu correo electrónico">
                 <input type="password" id="pass" placeholder="Tu contraseña">
                 <button class="btn-entrar" onclick="window.authEmail()">Ingresar</button>
                 
