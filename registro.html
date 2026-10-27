@@ -8,7 +8,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -22,52 +22,80 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        auth.languageCode = "es"; // el email de verificación llega en español
         const db = getFirestore(app);
+
+        // Traduce los errores de Firebase a mensajes claros
+        function mensajeDeError(error) {
+            switch (error.code) {
+                case 'auth/email-already-in-use': return "❌ Ya existe una cuenta con ese email. Volvé atrás e iniciá sesión (si no recordás la contraseña, usá \"¿Olvidaste tu contraseña?\"). Si te registraste con Google o Facebook, entrá con ese botón.";
+                case 'auth/invalid-email': return "❌ El formato del email no es válido.";
+                case 'auth/weak-password': return "❌ La contraseña es muy débil. Usá al menos 8 caracteres, mezclando letras y números.";
+                case 'auth/network-request-failed': return "❌ Sin conexión. Revisá tu internet y probá de nuevo.";
+                case 'auth/too-many-requests': return "⏳ Demasiados intentos. Esperá unos minutos y probá de nuevo.";
+                default: return "❌ No se pudo crear la cuenta. Probá de nuevo en unos minutos.";
+            }
+        }
+
+        function mostrarError(texto) {
+            const caja = document.getElementById('error-registro');
+            caja.innerText = texto;
+            caja.style.display = texto ? 'block' : 'none';
+        }
 
         window.crearCuentaEmail = async () => {
             const nombre = document.getElementById('reg-nombre').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
+            const email = document.getElementById('reg-email').value.trim().toLowerCase();
             const pass = document.getElementById('reg-pass').value;
-            
-            if(!nombre || !email || !pass) {
-                return alert("⚠️ Por favor, completá todos los casilleros.");
-            }
-            if(pass.length < 6) {
-                return alert("⚠️ La contraseña debe tener al menos 6 caracteres por seguridad.");
-            }
-            const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if(!regexEmail.test(email)) {
-                return alert("⚠️ El formato del correo electrónico no es válido.");
-            }
+            const pass2 = document.getElementById('reg-pass2').value;
+            const acepta = document.getElementById('reg-acepta').checked;
+            const btn = document.getElementById('btn-registrar');
+            mostrarError('');
 
+            if (nombre.length < 2) return mostrarError("⚠️ Escribí tu nombre y apellido.");
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return mostrarError("⚠️ El formato del email no es válido.");
+            if (pass.length < 8) return mostrarError("⚠️ La contraseña tiene que tener al menos 8 caracteres.");
+            if (pass !== pass2) return mostrarError("⚠️ Las dos contraseñas no coinciden.");
+            if (!acepta) return mostrarError("⚠️ Para crear la cuenta tenés que confirmar que sos mayor de 18 años y aceptar los Términos y la Política de Privacidad.");
+
+            btn.disabled = true;
+            btn.innerText = "Creando cuenta...";
             try {
-                // 1. Crea el usuario de verdad únicamente acá
+                // 1. Crea el usuario
                 const result = await createUserWithEmailAndPassword(auth, email, pass);
-                
-                // 2. Guarda el perfil en Firestore
-                const paisDetectado = navigator.language || "es-AR";
+                try { await updateProfile(result.user, { displayName: nombre }); } catch (e) {}
+
+                // 2. Guarda el perfil (el plan y los mensajes los maneja solo el servidor)
                 await setDoc(doc(db, "usuarios", result.user.uid), {
-                    nombre: nombre, 
+                    nombre: nombre,
                     email: email,
-                    foto: "",
-                    pais: paisDetectado,
-                    edad: 0,
+                    pais: navigator.language || "es-AR",
                     version_seleccionada: "Pendiente",
+                    mayorDeEdad: true,
+                    aceptoTerminos: serverTimestamp(),
                     fecha_registro: serverTimestamp(),
                     ultimo_acceso: serverTimestamp()
                 }, { merge: true });
 
-                console.log("Perfil guardado con éxito.");
-                // 3. Al checkout directo a pagar o elegir la prueba
+                // 3. Email para verificar la dirección (no bloquea el ingreso)
+                try { await sendEmailVerification(result.user); } catch (e) { console.warn("No se pudo enviar la verificación", e); }
+
+                alert("✅ ¡Cuenta creada! Te enviamos un email para verificar tu dirección (revisá también spam).");
                 window.location.href = "checkout.html";
-                
             } catch (error) {
-                if (error.code === 'auth/email-already-in-use') {
-                    alert("❌ Este correo electrónico ya existe. Si es tuyo, volvé atrás e iniciá sesión.");
-                } else {
-                    alert("❌ Error al registrar cuenta: " + error.message);
-                }
+                console.error(error);
+                mostrarError(mensajeDeError(error));
+                btn.disabled = false;
+                btn.innerText = "Registrarse y continuar";
             }
+        };
+
+        // Mostrar / ocultar contraseñas
+        window.verClave = (boton) => {
+            const campos = [document.getElementById('reg-pass'), document.getElementById('reg-pass2')];
+            const mostrar = campos[0].type === 'password';
+            campos.forEach(c => c.type = mostrar ? 'text' : 'password');
+            boton.innerText = mostrar ? '🙈 Ocultar' : '👁️ Ver';
         };
     </script>
 
@@ -79,10 +107,9 @@
             min-height: 100vh; 
             overflow-x: hidden; 
             background: #000; 
-            font-family: -apple-system, sans-serif; 
+            font-family: -apple-system, 'Segoe UI', sans-serif; 
         }
         
-        /* Ajustamos el contenedor principal */
         .contenedor { 
             position: relative; 
             width: 100%; 
@@ -93,7 +120,6 @@
             padding: 20px; 
         }
         
-        /* CORRECCIÓN: position fixed ancla la imagen al fondo sin romper el diseño */
         .img-fondo { 
             width: 100vw; 
             height: 100vh; 
@@ -105,17 +131,16 @@
             filter: brightness(0.6); 
         }
         
-        /* CORRECCIÓN: margin: auto fuerza el centrado absoluto en todos los ejes */
         .caja-registro { 
             position: relative; 
             width: 100%; 
-            max-width: 340px; 
+            max-width: 360px; 
             z-index: 10; 
             display: flex; 
             flex-direction: column; 
-            gap: 15px; 
-            background: rgba(0, 0, 0, 0.75); 
-            padding: 30px; 
+            gap: 14px; 
+            background: rgba(0, 0, 0, 0.78); 
+            padding: 28px; 
             border-radius: 20px; 
             backdrop-filter: blur(10px); 
             border: 1px solid rgba(0, 255, 204, 0.2); 
@@ -127,15 +152,22 @@
         h2 span { color: #00ffcc; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         label { color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
-        input { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.3); background: rgba(0,0,0,0.6); font-size: 13px; color: #fff; outline: none; transition: 0.3s; }
+        input[type=text], input[type=email], input[type=password] { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.3); background: rgba(0,0,0,0.6); font-size: 14px; color: #fff; outline: none; transition: 0.3s; }
         input:focus { border-color: #8e44ad; box-shadow: 0 0 8px rgba(142, 68, 173, 0.4); }
-        .btn-registrar { background: #8e44ad; color: white; border: none; padding: 13px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3); transition: 0.3s; }
-        .btn-registrar:hover { background: #9b59b6; transform: translateY(-1px); }
+        .fila-clave { display: flex; justify-content: space-between; align-items: center; }
+        .btn-ver { background: none; border: none; color: #00ffcc; font-size: 11px; cursor: pointer; }
+        .acepta { display: flex; gap: 10px; align-items: flex-start; color: #ddd; font-size: 12px; line-height: 1.45; cursor: pointer; }
+        .acepta input { margin-top: 2px; width: 18px; height: 18px; flex-shrink: 0; accent-color: #00ffcc; }
+        .acepta a { color: #00ffcc; }
+        .btn-registrar { background: #8e44ad; color: white; border: none; padding: 13px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; margin-top: 4px; box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3); transition: 0.3s; }
+        .btn-registrar:hover { background: #9b59b6; }
+        .btn-registrar:disabled { opacity: 0.6; cursor: wait; }
+        .error-registro { display: none; color: #ff8080; background: rgba(255, 77, 77, 0.1); border: 1px solid rgba(255, 77, 77, 0.4); border-radius: 8px; padding: 10px; font-size: 12.5px; line-height: 1.4; }
         .subtitulo { color: rgba(255,255,255,0.8); font-size: 12px; text-align: center; line-height: 1.4; margin-top: -8px; }
-        .legal-footer { font-size: 10.5px; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.4; }
-        .legal-footer a, .volver-inicio { color: #00ffcc; text-decoration: none; font-weight: bold; }
-        .volver-inicio { font-size: 12px; text-align: center; font-weight: normal; }
-        .btn-volver { background: transparent; color: #aaa; border: none; font-size: 12px; cursor: pointer; text-align: center; text-decoration: underline; margin-top: 5px; }
+        .btn-volver { background: transparent; color: #aaa; border: none; font-size: 12px; cursor: pointer; text-align: center; text-decoration: underline; }
+        .volver-inicio { color: #00ffcc; font-size: 12px; text-align: center; text-decoration: none; }
+        .pie-legal { font-size: 10.5px; text-align: center; }
+        .pie-legal a { color: #00ffcc; text-decoration: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -146,25 +178,43 @@
             <h2>Crear cuenta en <span>Nélida</span></h2>
             <p class="subtitulo">Asistente de inteligencia artificial con 18 especialidades. Tu cuenta es solo para usar nelida.com.ar.</p>
 
-            <div class="form-group">
-                <label>Nombre y Apellido</label>
-                <input type="text" id="reg-nombre" placeholder="Ej: Hernán Muñoz" autocomplete="off">
-            </div>
+            <form onsubmit="event.preventDefault(); window.crearCuentaEmail();" style="display:flex; flex-direction:column; gap:14px;">
+                <div class="form-group">
+                    <label for="reg-nombre">Nombre y apellido</label>
+                    <input type="text" id="reg-nombre" placeholder="Ej: Hernán Muñoz" autocomplete="name" maxlength="100">
+                </div>
 
-            <div class="form-group">
-                <label>Correo electrónico</label>
-                <input type="email" id="reg-email" placeholder="nombre@correo.com" autocomplete="email">
-            </div>
+                <div class="form-group">
+                    <label for="reg-email">Correo electrónico</label>
+                    <input type="email" id="reg-email" placeholder="nombre@correo.com" autocomplete="email" maxlength="150">
+                </div>
 
-            <div class="form-group">
-                <label>Elegí una contraseña nueva para Nélida (mínimo 6 caracteres)</label>
-                <input type="password" id="reg-pass" placeholder="******" autocomplete="new-password">
-            </div>
+                <div class="form-group">
+                    <div class="fila-clave">
+                        <label for="reg-pass">Contraseña nueva para Nélida</label>
+                        <button type="button" class="btn-ver" onclick="window.verClave(this)">👁️ Ver</button>
+                    </div>
+                    <input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+                </div>
 
-            <button class="btn-registrar" onclick="window.crearCuentaEmail()">Registrarse y Continuar</button>
+                <div class="form-group">
+                    <label for="reg-pass2">Repetí la contraseña</label>
+                    <input type="password" id="reg-pass2" placeholder="Escribila de nuevo" autocomplete="new-password">
+                </div>
+
+                <label class="acepta" style="text-transform:none; letter-spacing:0; font-weight:normal;">
+                    <input type="checkbox" id="reg-acepta">
+                    <span>Soy <b>mayor de 18 años</b> y acepto los <a href="terminos.html" target="_blank">Términos de Servicio</a> y la <a href="privacidad.html" target="_blank">Política de Privacidad</a>.</span>
+                </label>
+
+                <div class="error-registro" id="error-registro"></div>
+
+                <button type="submit" class="btn-registrar" id="btn-registrar">Registrarse y continuar</button>
+            </form>
+
             <button class="btn-volver" onclick="window.location.href='login.html'">Ya tengo cuenta, iniciar sesión</button>
-            <div class="legal-footer">
-                Al registrarte, aceptás nuestros <a href="terminos.html">Términos de Servicio</a> y la <a href="privacidad.html">Política de Privacidad</a>.
+            <div class="pie-legal">
+                <a href="tramite.html?tipo=arrepentimiento">Botón de Arrepentimiento</a> · <a href="tramite.html?tipo=baja">Botón de Baja de Servicio</a>
             </div>
             <a href="index.html" class="volver-inicio">← Volver al inicio de Nélida</a>
         </main>
