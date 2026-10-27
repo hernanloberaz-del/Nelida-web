@@ -1,29 +1,72 @@
 // Conexión segura del servidor con Firebase.
-// Usa las llaves guardadas en Vercel (FIREBASE_CLIENT_EMAIL y FIREBASE_PRIVATE_KEY).
+// Usa la llave guardada en Vercel. Preferimos FIREBASE_SERVICE_ACCOUNT (el archivo .json entero).
+// Si no existe, usa FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY.
 // Este archivo empieza con "_" para que Vercel NO lo publique como dirección.
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
+import { createPrivateKey } from 'crypto';
 
 export const MENSAJES_GRATIS = 10;
+let errorDeLlave = null;
+
+function limpiarClave(clave) {
+    return String(clave || '').trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n');
+}
+
+function leerCredenciales() {
+    const jsonEntero = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (jsonEntero && jsonEntero.trim()) {
+        let cuenta;
+        try {
+            cuenta = JSON.parse(jsonEntero);
+        } catch (e) {
+            throw new Error('FIREBASE_SERVICE_ACCOUNT no es un .json válido (¿se copió entero, desde la primera { hasta la última }?)');
+        }
+        return {
+            projectId: cuenta.project_id || 'nelida-e89d3',
+            clientEmail: cuenta.client_email,
+            privateKey: limpiarClave(cuenta.private_key),
+            origen: 'FIREBASE_SERVICE_ACCOUNT'
+        };
+    }
+    return {
+        projectId: 'nelida-e89d3',
+        clientEmail: (process.env.FIREBASE_CLIENT_EMAIL || '').trim().replace(/^"|"$/g, ''),
+        privateKey: limpiarClave(process.env.FIREBASE_PRIVATE_KEY),
+        origen: 'FIREBASE_PRIVATE_KEY'
+    };
+}
 
 function iniciar() {
     if (getApps().length) return;
-    let clave = process.env.FIREBASE_PRIVATE_KEY || '';
-    // La clave puede venir con comillas o con "\n" escritos como texto
-    clave = clave.trim().replace(/^"|"$/g, '').replace(/\\n/g, '\n');
-    initializeApp({
-        credential: cert({
-            projectId: 'nelida-e89d3',
-            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-            privateKey: clave
-        })
-    });
+    try {
+        const c = leerCredenciales();
+        if (!c.clientEmail) throw new Error('Falta el client_email de Firebase (' + c.origen + ')');
+        // Comprobamos que la llave esté bien copiada antes de usarla
+        try { createPrivateKey(c.privateKey); }
+        catch (e) { throw new Error('La llave privada de Firebase está mal copiada (' + c.origen + ')'); }
+        initializeApp({ credential: cert({ projectId: c.projectId, clientEmail: c.clientEmail, privateKey: c.privateKey }) });
+    } catch (e) {
+        errorDeLlave = e.message;
+        initializeApp({ projectId: 'nelida-e89d3' }); // permite seguir verificando sesiones
+    }
 }
 
 iniciar();
 
 export const db = getFirestore();
+
+// Prueba la llave pidiendo un permiso a Google. Devuelve el motivo exacto si falla.
+export async function probarLlave() {
+    if (errorDeLlave) return errorDeLlave;
+    try {
+        await getApp().options.credential.getAccessToken();
+        return null;
+    } catch (e) {
+        return 'Google rechazó la llave de Firebase: ' + (e.message || e);
+    }
+}
 
 // Devuelve el usuario que hace el pedido, o null si no inició sesión.
 export async function verificarUsuario(req) {
