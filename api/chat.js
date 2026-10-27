@@ -1,4 +1,4 @@
-import { db, verificarUsuario, calcularEstado, MENSAJES_GRATIS } from './_firebase.js';
+import { db, verificarUsuario, calcularEstado, MENSAJES_GRATIS, probarLlave } from './_firebase.js';
 import { FieldValue } from 'firebase-admin/firestore';
 
 // Respuesta armada con el mismo formato que Gemini (para cuando no hace falta llamarlo)
@@ -142,6 +142,8 @@ export default async function handler(req, res) {
         return res.status(200).json(data);
 
     } catch (err) {
-        return res.status(500).json({ error: err.message });
+        console.error('Error en /api/chat:', err);
+        const motivo = await probarLlave();
+        return res.status(500).json({ error: motivo || err.message });
     }
 }
