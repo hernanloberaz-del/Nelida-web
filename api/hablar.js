@@ -1,3 +1,5 @@
+import { db, verificarUsuario, calcularEstado } from './_firebase.js';
+
 export default async function handler(req, res) {
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
@@ -7,8 +9,18 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Falta la clave OPENAI_API_KEY en las variables de entorno de Vercel" });
     }
 
+    // SEGURIDAD: la voz es solo para usuarios PRO, y lo verifica el servidor
+    const usuario = await verificarUsuario(req);
+    if (!usuario) return res.status(401).json({ error: 'Tenés que iniciar sesión.' });
+
     try {
-        const { texto } = req.body;
+        const ficha = await db.collection('usuarios').doc(usuario.uid).get();
+        const estado = calcularEstado(ficha.exists ? ficha.data() : {});
+        if (!estado.esPro) {
+            return res.status(403).json({ error: 'La voz de Nélida es exclusiva para usuarios PRO.' });
+        }
+
+        const { texto } = req.body || {};
 
         if (!texto) {
             return res.status(400).json({ error: "No se proporcionó texto para leer" });
@@ -22,8 +34,8 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 model: "tts-1", // Usar tts-1 (y no tts-1-hd) es clave porque está optimizado para baja latencia
-                voice: "nova", 
-                input: texto.substring(0, 4000) 
+                voice: "nova",
+                input: String(texto).substring(0, 4000)
             })
         });
 
@@ -32,10 +44,10 @@ export default async function handler(req, res) {
             throw new Error(`Fallo en OpenAI: ${errorData}`);
         }
 
-        // LA MAGIA: Extraemos el audio crudo y lo mandamos directamente sin convertir a Base64
+        // Extraemos el audio crudo y lo mandamos directamente sin convertir a Base64
         const arrayBuffer = await response.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        
+
         res.setHeader('Content-Type', 'audio/mpeg'); // Le avisamos a la web que viene un MP3 puro
         return res.status(200).send(buffer);
 

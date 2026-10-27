@@ -1,16 +1,59 @@
+import { db, verificarUsuario, calcularEstado, MENSAJES_GRATIS } from './_firebase.js';
+import { FieldValue } from 'firebase-admin/firestore';
+
+// Respuesta armada con el mismo formato que Gemini (para cuando no hace falta llamarlo)
+function respuestaFija(texto, estado) {
+    return { candidates: [{ content: { parts: [{ text: texto }] } }], nelida: estado };
+}
+
 export default async function handler(req, res) {
-    const API_KEY = process.env.GEMINI_API_KEY; 
+    const API_KEY = process.env.GEMINI_API_KEY;
 
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'no-store');
     if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
     if (!API_KEY) {
         return res.status(500).json({ error: "Falta la GEMINI_API_KEY en Vercel" });
     }
 
+    // SEGURIDAD 1: solo usuarios con sesión iniciada en Nélida
+    const usuario = await verificarUsuario(req);
+    if (!usuario) return res.status(401).json({ error: 'Tenés que iniciar sesión.' });
+
     try {
-        let { contents, especialidad, mensajesRestantes, archivoBase64, archivoMime } = req.body;
-        mensajesRestantes = Number(mensajesRestantes);
+        let { contents, especialidad, archivoBase64, archivoMime } = req.body || {};
+
+        if (!Array.isArray(contents) || contents.length === 0) {
+            return res.status(400).json({ error: 'Mensaje vacío.' });
+        }
+        // Solo mandamos a Gemini la conversación reciente (evita abusos y costos altos)
+        contents = contents.slice(-30);
+
+        // SEGURIDAD 2: el servidor cuenta los mensajes y decide si es PRO (no el navegador)
+        const refFicha = db.collection('usuarios').doc(usuario.uid);
+        const estadoAntes = await db.runTransaction(async (t) => {
+            const ficha = await t.get(refFicha);
+            const estado = calcularEstado(ficha.exists ? ficha.data() : {});
+            if (estado.esPro || estado.usados < MENSAJES_GRATIS) {
+                const nuevosUsados = estado.usados + 1;
+                const cambios = { mensajesUsados: FieldValue.increment(1) };
+                if (!estado.esPro) cambios.mensajesRestantes = Math.max(0, MENSAJES_GRATIS - nuevosUsados);
+                t.set(refFicha, cambios, { merge: true });
+            }
+            return estado;
+        });
+
+        // Ya usó todos los mensajes gratis: respondemos sin gastar Gemini
+        if (!estadoAntes.esPro && estadoAntes.usados >= MENSAJES_GRATIS) {
+            return res.status(200).json(respuestaFija(
+                "Ya usaste tus mensajes de prueba. Tu estrategia completa y tus guías (PDF/Excel) están listas para generarse: activá tu suscripción Nélida PRO para continuar. [VENTA]",
+                { plan: 'FREE', mensajesRestantes: 0 }
+            ));
+        }
+
+        const mensajesRestantes = estadoAntes.esPro ? NaN : MENSAJES_GRATIS - (estadoAntes.usados + 1);
+        const estadoNuevo = { plan: estadoAntes.esPro ? 'PRO' : 'FREE', mensajesRestantes: estadoAntes.esPro ? null : mensajesRestantes };
 
         // Diccionario optimizado con las facetas de Nélida (todo en minúsculas para evitar errores)
         const roles = {
@@ -42,7 +85,7 @@ export default async function handler(req, res) {
         // REGLA DE ORO INTERCONECTADA (Aplicable a todos los niveles)
         const reglaInterconexion = `\n\nREGLA DE INTERCONEXIÓN: Si el usuario te hace una consulta que claramente corresponde a otra faceta de Nélida, no intentes responderla tú. Dile amablemente: "Ese tema es competencia de mi versión de Nélida [Nombre de la faceta correspondiente]. Te sugiero que cambies a esa especialidad desde el menú principal para darte el mejor asesoramiento posible".`;
 
-        if (isNaN(mensajesRestantes) || mensajesRestantes > 1000) {
+        if (estadoAntes.esPro) {
             textoInstruccion = `Nombre: NELIDA. Rol: ${instruccionEspecializada}. Tono: Estrictamente profesional, formal y respetuoso. Trate al usuario de "usted". Prohibido lunfardo.
             
             ESTÁS EN MODO PRO ILIMITADO. EL USUARIO YA PAGÓ. Responde con soluciones finales, paso a paso y estrategias profesionales.
@@ -86,6 +129,16 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
+
+        // Si Gemini falló, devolvemos el mensaje descontado para no perjudicar al usuario
+        if (!response.ok || !data.candidates) {
+            const devolver = { mensajesUsados: FieldValue.increment(-1) };
+            if (!estadoAntes.esPro) devolver.mensajesRestantes = mensajesRestantes + 1;
+            await refFicha.set(devolver, { merge: true });
+            return res.status(502).json({ error: 'Nélida no pudo responder. Probá de nuevo.' });
+        }
+
+        data.nelida = estadoNuevo;
         return res.status(200).json(data);
 
     } catch (err) {
