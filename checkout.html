@@ -260,7 +260,8 @@
 
             <div id="paypal-box" class="pay-box">
                 <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5; margin-bottom: 20px;">Pagá de forma rápida y segura desde cualquier parte del mundo utilizando tu saldo de PayPal o tarjetas internacionales.</p>
-                <div id="paypal-button-container-P-1KW822034C763352DNIGHICQ"></div>
+                <div id="paypal-botones"><p style="color: var(--text-muted); font-size: 0.85em; text-align:center;">Cargando PayPal...</p></div>
+                <p id="paypal-mensaje" style="text-align: center; color: var(--error-red); font-size: 0.85em; margin-top: 10px; min-height: 1em;"></p>
                 <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual internacional ($9.99 USD)</p>
             </div>
 
@@ -291,7 +292,59 @@
             usuarioActual = user;
             const campo = document.getElementById('mp-email');
             if (campo && !campo.value) campo.value = user.email || '';
+            if (!window.__paypalIniciado) { window.__paypalIniciado = true; iniciarPaypal(); }
         });
+
+        // --- PAYPAL: el botón se arma con datos que da el servidor ---
+        async function iniciarPaypal() {
+            const caja = document.getElementById('paypal-botones');
+            const msg = document.getElementById('paypal-mensaje');
+            try {
+                const cfgRes = await fetch('/api/paypal-config');
+                const cfg = await cfgRes.json();
+                if (!cfgRes.ok) throw new Error(cfg.error || 'PayPal no disponible por ahora.');
+
+                await new Promise((ok, falla) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(cfg.clientId) + '&vault=true&intent=subscription';
+                    s.onload = ok; s.onerror = () => falla(new Error('No se pudo cargar PayPal.'));
+                    document.body.appendChild(s);
+                });
+
+                caja.innerHTML = '';
+                window.paypal.Buttons({
+                    style: { shape: 'pill', color: 'blue', layout: 'vertical', label: 'subscribe' },
+                    createSubscription: (data, actions) => actions.subscription.create({
+                        plan_id: cfg.planId,
+                        custom_id: usuarioActual.uid // la "etiqueta" que une el pago con tu cuenta
+                    }),
+                    onApprove: async (data) => {
+                        caja.innerHTML = '<p style="color: var(--neon-green); text-align:center;">✅ Confirmando tu suscripción con PayPal...</p>';
+                        try {
+                            const token = await usuarioActual.getIdToken();
+                            const r = await fetch('/api/paypal-confirmar', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                body: JSON.stringify({ subscriptionID: data.subscriptionID })
+                            });
+                            const res = await r.json();
+                            if (r.ok && res.plan === 'PRO') {
+                                alert('💎 ¡Listo! Ya tenés Nélida PRO.');
+                            } else {
+                                alert('✅ Recibimos tu suscripción. Tu PRO se activará en unos minutos, apenas PayPal confirme el pago.');
+                            }
+                        } catch (e) {
+                            alert('✅ Recibimos tu suscripción. Tu PRO se activará en unos minutos.');
+                        }
+                        window.location.href = 'interaccion.html';
+                    },
+                    onError: () => { msg.innerText = 'PayPal tuvo un problema. Probá de nuevo o usá Mercado Pago.'; }
+                }).render('#paypal-botones');
+            } catch (e) {
+                caja.innerHTML = '';
+                msg.innerText = e.message;
+            }
+        }
 
         window.suscribirMP = async () => {
             const btn = document.getElementById('btn-mp');
@@ -332,24 +385,5 @@
         }
     </script>
 
-    <script src="https://www.paypal.com/sdk/js?client-id=BAAN4ARxixrtl7daE3GLRBgtiK7hMYdixmNIY4KHn3gJedt9O69N4MpRFuVL9HTXI0e0I4q9Q5qpYd0mRI&vault=true&intent=subscription" data-sdk-integration-source="button-factory"></script>
-    <script>
-        paypal.Buttons({
-            style: {
-                shape: 'pill',
-                color: 'blue',
-                layout: 'vertical',
-                label: 'subscribe'
-            },
-            createSubscription: function(data, actions) {
-                return actions.subscription.create({
-                    plan_id: 'P-1KW822034C763352DNIGHICQ'
-                });
-            },
-            onApprove: function(data, actions) {
-                window.location.href = 'menu.html?pago=ok';
-            }
-        }).render('#paypal-button-container-P-1KW822034C763352DNIGHICQ');
-    </script>
 </body>
 </html>
