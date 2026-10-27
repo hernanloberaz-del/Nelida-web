@@ -251,8 +251,11 @@
 
             <div id="mp-box" class="pay-box active-box">
                 <p style="color: #e0e0e0; font-size: 0.95em; line-height: 1.5;">Serás redirigido a la plataforma segura de Mercado Pago. Podés adherir tu tarjeta de crédito o débito para activar tu suscripción.</p>
-                <a href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=498087b7b10645b79fb5b314ac870bd8" class="pay-btn btn-mp-link">Suscribirse por $13.999 ARS</a>
-                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 15px;">✓ Débito automático mensual local</p>
+                <label for="mp-email" style="display:block; color: var(--text-muted); font-size: 0.85em; margin: 15px 0 6px;">Email de tu cuenta de Mercado Pago</label>
+                <input type="email" id="mp-email" placeholder="tu@email.com" autocomplete="email" style="width:100%; box-sizing:border-box; padding:12px; border-radius:8px; border:1px solid var(--glass-border); background: rgba(0,0,0,0.5); color:#fff; font-size: 0.95em;">
+                <button type="button" id="btn-mp" class="pay-btn btn-mp-link" onclick="window.suscribirMP()" style="width:100%; border:none; cursor:pointer;">Suscribirse por $13.999 ARS</button>
+                <p id="mp-mensaje" style="text-align: center; color: var(--error-red); font-size: 0.85em; margin-top: 10px; min-height: 1em;"></p>
+                <p style="text-align: center; color: var(--neon-green); font-size: 0.8em; margin-top: 5px;">✓ Débito automático mensual local · Tu PRO se activa solo al aprobarse el pago</p>
             </div>
 
             <div id="paypal-box" class="pay-box">
@@ -266,6 +269,54 @@
             </div>
         </div>
     </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+        const app = initializeApp({
+            apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
+            authDomain: "nelida-e89d3.firebaseapp.com",
+            projectId: "nelida-e89d3",
+            storageBucket: "nelida-e89d3.firebasestorage.app",
+            messagingSenderId: "135147571928",
+            appId: "1:135147571928:web:347838ce007dac458225ad"
+        });
+        const auth = getAuth(app);
+        let usuarioActual = null;
+
+        // Para pagar hay que haber iniciado sesión (así el pago queda unido a tu cuenta)
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = 'login.html'; return; }
+            usuarioActual = user;
+            const campo = document.getElementById('mp-email');
+            if (campo && !campo.value) campo.value = user.email || '';
+        });
+
+        window.suscribirMP = async () => {
+            const btn = document.getElementById('btn-mp');
+            const msg = document.getElementById('mp-mensaje');
+            msg.innerText = '';
+            if (!usuarioActual) { window.location.href = 'login.html'; return; }
+            btn.disabled = true;
+            btn.innerText = 'Conectando con Mercado Pago...';
+            try {
+                const token = await usuarioActual.getIdToken();
+                const res = await fetch('/api/mp-suscribir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ email: document.getElementById('mp-email').value })
+                });
+                const data = await res.json();
+                if (!res.ok || !data.url) throw new Error(data.error || 'No se pudo iniciar el pago.');
+                window.location.href = data.url;
+            } catch (e) {
+                msg.innerText = e.message;
+                btn.disabled = false;
+                btn.innerText = 'Suscribirse por $13.999 ARS';
+            }
+        };
+    </script>
 
     <script>
         function mostrarMetodo(metodo, botonSeleccionado) {
