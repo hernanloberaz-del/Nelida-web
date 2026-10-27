@@ -2,13 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nélida AI - Iniciar Sesión</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Crear cuenta en Nélida AI - nelida.com.ar</title>
+    <meta name="description" content="Creá tu cuenta en Nélida AI (nelida.com.ar), asistente de inteligencia artificial con 18 especialidades.">
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBVEFGwRHGjX1TuyXQohdTXsm4Tq39jSkg",
@@ -22,121 +23,151 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
-        const googleProvider = new GoogleAuthProvider();
-        const facebookProvider = new FacebookAuthProvider();
 
-        const contarVisita = async () => {
-            try {
-                await setDoc(doc(db, "analitica", "visitas"), {
-                    total: increment(1)
-                }, { merge: true });
-            } catch (error) {
-                console.error("Error al registrar visita:", error);
+        window.crearCuentaEmail = async () => {
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const pass = document.getElementById('reg-pass').value;
+            
+            if(!nombre || !email || !pass) {
+                return alert("⚠️ Por favor, completá todos los casilleros.");
             }
-        };
+            if(pass.length < 6) {
+                return alert("⚠️ La contraseña debe tener al menos 6 caracteres por seguridad.");
+            }
+            const regexEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!regexEmail.test(email)) {
+                return alert("⚠️ El formato del correo electrónico no es válido.");
+            }
 
-        contarVisita();
-
-        const actualizarUltimoLogin = async (user) => {
             try {
-                await setDoc(doc(db, "usuarios", user.uid), {
-                    email: user.email || "Usuario sin email",
+                // 1. Crea el usuario de verdad únicamente acá
+                const result = await createUserWithEmailAndPassword(auth, email, pass);
+                
+                // 2. Guarda el perfil en Firestore
+                const paisDetectado = navigator.language || "es-AR";
+                await setDoc(doc(db, "usuarios", result.user.uid), {
+                    nombre: nombre, 
+                    email: email,
+                    foto: "",
+                    pais: paisDetectado,
+                    edad: 0,
+                    version_seleccionada: "Pendiente",
                     fecha_registro: serverTimestamp(),
                     ultimo_acceso: serverTimestamp()
                 }, { merge: true });
-            } catch (error) { console.error("Error al actualizar login:", error); }
-        };
 
-        window.loginConGoogle = async () => {
-            try {
-                const result = await signInWithPopup(auth, googleProvider);
-                await actualizarUltimoLogin(result.user);
-                window.location.href = "checkout.html"; 
-            } catch (e) { alert("Error Google: " + e.message); }
-        };
-
-        window.loginConFacebook = async () => {
-            try {
-                const result = await signInWithPopup(auth, facebookProvider);
-                await actualizarUltimoLogin(result.user);
-                window.location.href = "checkout.html"; 
-            } catch (e) { alert("Error Facebook: " + e.message); }
-        };
-
-        window.authEmail = async () => {
-            const email = document.getElementById('email').value.trim();
-            const pass = document.getElementById('pass').value;
-            
-            if(!email || !pass) return alert("Por favor, completa los campos.");
-
-            try {
-                const result = await signInWithEmailAndPassword(auth, email, pass);
-                await actualizarUltimoLogin(result.user);
-                window.location.href = "checkout.html"; 
-            } catch (e) {
-                alert("❌ El correo o la contraseña son incorrectos. Si todavía no tenés una cuenta, hacé clic abajo en 'Registrate acá'.");
+                console.log("Perfil guardado con éxito.");
+                // 3. Al checkout directo a pagar o elegir la prueba
+                window.location.href = "checkout.html";
+                
+            } catch (error) {
+                if (error.code === 'auth/email-already-in-use') {
+                    alert("❌ Este correo electrónico ya existe. Si es tuyo, volvé atrás e iniciá sesión.");
+                } else {
+                    alert("❌ Error al registrar cuenta: " + error.message);
+                }
             }
         };
     </script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; }
-        .contenedor { position: relative; width: 100vw; height: 100vh; display: flex; align-items: center; }
-        .img-fondo { width: 100%; height: 100%; object-fit: cover; position: absolute; z-index: 1; }
-        .columna-izquierda { position: relative; left: 65px; width: 300px; z-index: 10; display: flex; flex-direction: column; gap: 12px; background: rgba(0, 0, 0, 0.4); padding: 20px; border-radius: 20px; backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .btn-social { width: 100%; height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.3); background: white; color: #333; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .btn-social img { width: 18px; height: 18px; }
-        .btn-facebook { background: #1877F2; color: white; border: none; }
-        .form-auth { margin-top: 10px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px; }
-        input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: rgba(255,255,255,0.95); font-size: 13px; color: #000; }
-        .btn-entrar { background: #007bff; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; }
-        .btn-ir-registro { background: transparent; color: #00ffcc; border: 1px dashed #00ffcc; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-transform: uppercase; text-align: center; text-decoration: none; margin-top: 5px; }
-        .btn-ir-registro:hover { background: rgba(0, 255, 204, 0.1); }
         
-        .legal-footer {
-            margin-top: 10px;
-            text-align: center;
-            font-size: 10.5px;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.4;
+        body, html { 
+            width: 100%; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
+            background: #000; 
+            font-family: -apple-system, sans-serif; 
         }
-        .legal-footer a {
-            color: #00ffcc;
-            text-decoration: none;
-            font-weight: bold;
+        
+        /* Ajustamos el contenedor principal */
+        .contenedor { 
+            position: relative; 
+            width: 100%; 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px; 
         }
-        .legal-footer a:hover {
-            text-decoration: underline;
+        
+        /* CORRECCIÓN: position fixed ancla la imagen al fondo sin romper el diseño */
+        .img-fondo { 
+            width: 100vw; 
+            height: 100vh; 
+            object-fit: cover; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            z-index: 1; 
+            filter: brightness(0.6); 
         }
+        
+        /* CORRECCIÓN: margin: auto fuerza el centrado absoluto en todos los ejes */
+        .caja-registro { 
+            position: relative; 
+            width: 100%; 
+            max-width: 340px; 
+            z-index: 10; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            background: rgba(0, 0, 0, 0.75); 
+            padding: 30px; 
+            border-radius: 20px; 
+            backdrop-filter: blur(10px); 
+            border: 1px solid rgba(0, 255, 204, 0.2); 
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.15); 
+            margin: auto; 
+        }
+        
+        h2 { color: #fff; font-family: 'Segoe UI', sans-serif; font-size: 1.4em; text-align: center; letter-spacing: 1px; margin-bottom: 5px; }
+        h2 span { color: #00ffcc; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        label { color: #aaa; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        input { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid rgba(0, 255, 204, 0.3); background: rgba(0,0,0,0.6); font-size: 13px; color: #fff; outline: none; transition: 0.3s; }
+        input:focus { border-color: #8e44ad; box-shadow: 0 0 8px rgba(142, 68, 173, 0.4); }
+        .btn-registrar { background: #8e44ad; color: white; border: none; padding: 13px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3); transition: 0.3s; }
+        .btn-registrar:hover { background: #9b59b6; transform: translateY(-1px); }
+        .subtitulo { color: rgba(255,255,255,0.8); font-size: 12px; text-align: center; line-height: 1.4; margin-top: -8px; }
+        .legal-footer { font-size: 10.5px; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.4; }
+        .legal-footer a, .volver-inicio { color: #00ffcc; text-decoration: none; font-weight: bold; }
+        .volver-inicio { font-size: 12px; text-align: center; font-weight: normal; }
+        .btn-volver { background: transparent; color: #aaa; border: none; font-size: 12px; cursor: pointer; text-align: center; text-decoration: underline; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div class="contenedor">
-        <img src="versiones_nelida/sexologa.png" class="img-fondo">
-        <div class="columna-izquierda">
-            <button class="btn-social" onclick="window.loginConGoogle()">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
-                Continuar con Google
-            </button>
-            <button class="btn-social btn-facebook" onclick="window.loginConFacebook()">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg" alt="FB">
-                Continuar con Facebook
-            </button>
-            <div class="form-auth">
-                <input type="text" id="email" placeholder="Tu correo electrónico">
-                <input type="password" id="pass" placeholder="Tu contraseña">
-                <button class="btn-entrar" onclick="window.authEmail()">Ingresar</button>
-                
-                <a href="registro.html" class="btn-ir-registro">¿No tenés cuenta? Registrate acá</a>
+        <img src="versiones_nelida/sexologa.png" class="img-fondo" alt="Nélida, asistente de inteligencia artificial">
+
+        <main class="caja-registro">
+            <h2>Crear cuenta en <span>Nélida</span></h2>
+            <p class="subtitulo">Asistente de inteligencia artificial con 18 especialidades. Tu cuenta es solo para usar nelida.com.ar.</p>
+
+            <div class="form-group">
+                <label>Nombre y Apellido</label>
+                <input type="text" id="reg-nombre" placeholder="Ej: Hernán Muñoz" autocomplete="off">
             </div>
-            
+
+            <div class="form-group">
+                <label>Correo electrónico</label>
+                <input type="email" id="reg-email" placeholder="nombre@correo.com" autocomplete="email">
+            </div>
+
+            <div class="form-group">
+                <label>Elegí una contraseña nueva para Nélida (mínimo 6 caracteres)</label>
+                <input type="password" id="reg-pass" placeholder="******" autocomplete="new-password">
+            </div>
+
+            <button class="btn-registrar" onclick="window.crearCuentaEmail()">Registrarse y Continuar</button>
+            <button class="btn-volver" onclick="window.location.href='login.html'">Ya tengo cuenta, iniciar sesión</button>
             <div class="legal-footer">
-                Al ingresar, aceptas nuestros <br>
-                <a href="terminos.html">Términos de Servicio</a> y la <a href="privacidad.html">Política de Privacidad</a>.
+                Al registrarte, aceptás nuestros <a href="terminos.html">Términos de Servicio</a> y la <a href="privacidad.html">Política de Privacidad</a>.
             </div>
-        </div>
+            <a href="index.html" class="volver-inicio">← Volver al inicio de Nélida</a>
+        </main>
     </div>
 </body>
 </html>
