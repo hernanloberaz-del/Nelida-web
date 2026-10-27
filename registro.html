@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Nélida AI - Crear Cuenta</title>
-    
+    <title>Crear cuenta en Nélida AI - nelida.com.ar</title>
+    <meta name="description" content="Creá tu cuenta en Nélida AI (nelida.com.ar), asistente de inteligencia artificial con 18 especialidades.">
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
@@ -130,16 +131,21 @@
         input:focus { border-color: #8e44ad; box-shadow: 0 0 8px rgba(142, 68, 173, 0.4); }
         .btn-registrar { background: #8e44ad; color: white; border: none; padding: 13px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 13px; text-transform: uppercase; margin-top: 10px; box-shadow: 0 4px 10px rgba(142, 68, 173, 0.3); transition: 0.3s; }
         .btn-registrar:hover { background: #9b59b6; transform: translateY(-1px); }
+        .subtitulo { color: rgba(255,255,255,0.8); font-size: 12px; text-align: center; line-height: 1.4; margin-top: -8px; }
+        .legal-footer { font-size: 10.5px; color: rgba(255,255,255,0.7); text-align: center; line-height: 1.4; }
+        .legal-footer a, .volver-inicio { color: #00ffcc; text-decoration: none; font-weight: bold; }
+        .volver-inicio { font-size: 12px; text-align: center; font-weight: normal; }
         .btn-volver { background: transparent; color: #aaa; border: none; font-size: 12px; cursor: pointer; text-align: center; text-decoration: underline; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div class="contenedor">
-        <img src="versiones_nelida/sexologa.png" class="img-fondo">
-        
-        <div class="caja-registro">
+        <img src="versiones_nelida/sexologa.png" class="img-fondo" alt="Nélida, asistente de inteligencia artificial">
+
+        <main class="caja-registro">
             <h2>Crear cuenta en <span>Nélida</span></h2>
-            
+            <p class="subtitulo">Asistente de inteligencia artificial con 18 especialidades. Tu cuenta es solo para usar nelida.com.ar.</p>
+
             <div class="form-group">
                 <label>Nombre y Apellido</label>
                 <input type="text" id="reg-nombre" placeholder="Ej: Hernán Muñoz" autocomplete="off">
@@ -147,17 +153,21 @@
 
             <div class="form-group">
                 <label>Correo electrónico</label>
-                <input type="email" id="reg-email" placeholder="nombre@correo.com" autocomplete="off">
+                <input type="email" id="reg-email" placeholder="nombre@correo.com" autocomplete="email">
             </div>
 
             <div class="form-group">
-                <label>Contraseña (Mínimo 6 caracteres)</label>
-                <input type="password" id="reg-pass" placeholder="******">
+                <label>Elegí una contraseña nueva para Nélida (mínimo 6 caracteres)</label>
+                <input type="password" id="reg-pass" placeholder="******" autocomplete="new-password">
             </div>
 
             <button class="btn-registrar" onclick="window.crearCuentaEmail()">Registrarse y Continuar</button>
             <button class="btn-volver" onclick="window.location.href='login.html'">Ya tengo cuenta, iniciar sesión</button>
-        </div>
+            <div class="legal-footer">
+                Al registrarte, aceptás nuestros <a href="terminos.html">Términos de Servicio</a> y la <a href="privacidad.html">Política de Privacidad</a>.
+            </div>
+            <a href="index.html" class="volver-inicio">← Volver al inicio de Nélida</a>
+        </main>
     </div>
 </body>
 </html>
