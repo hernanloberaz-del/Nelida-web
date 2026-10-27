@@ -30,20 +30,8 @@
             if (user) { 
                 usuarioActual = user; 
                 
-                // --- PROCESAMIENTO DE PAGO BLINDADO CON CLAVE SECRETA ---
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('validar') === 'NelidaAI_Pro_Suscripcion_Segura_2026_X') {
-                    try {
-                        // Usamos setDoc con merge por seguridad
-                        await setDoc(doc(db, "usuarios", user.uid), { plan: "PRO" }, { merge: true });
-                        localStorage.setItem('nelida_plan', 'PRO');
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                        alert("¡Pago exitoso! Ya tenés Nélida PRO activado.");
-                        window.location.reload();
-                    } catch (error) { 
-                        console.error("Error al activar el plan PRO:", error); 
-                    }
-                }
+                // (Eliminado: la activación PRO por enlace secreto. Ahora solo la hace el servidor.)
+                if (window.location.search) window.history.replaceState({}, document.title, window.location.pathname);
 
                 // --- BLOQUE DE SEGURIDAD INTERNA ---
                 try {
