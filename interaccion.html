@@ -389,19 +389,37 @@
         let currentUser = null;
         let facetaActiva = "ayuda";
         let historialAcumulado = [];
-        let esUsuarioPro = localStorage.getItem('nelida_pro') === 'true';
+        // SEGURIDAD: el plan (PRO o FREE) y los mensajes restantes los decide el servidor.
+        let esUsuarioPro = false;
+        let mensajesRestantes = null; // null = todavía cargando
+        localStorage.removeItem('nelida_pro'); // borra la marca vieja que daba PRO gratis
+        if (window.location.search) window.history.replaceState({}, document.title, window.location.pathname);
 
-        const parametrosURL = new URLSearchParams(window.location.search);
-        if (parametrosURL.get('pago') === 'ok') {
-            esUsuarioPro = true;
-            localStorage.setItem('nelida_pro', 'true');
-            window.history.replaceState({}, document.title, window.location.pathname);
-            setTimeout(() => {
-                alert("💎 ¡Pago exitoso! Bienvenido a Nélida PRO. Ahora tenés acceso ilimitado a todas las herramientas.");
-            }, 800);
+        // Pide al servidor una "credencial" del usuario para cada consulta
+        async function encabezadosSeguros() {
+            const token = currentUser ? await currentUser.getIdToken() : '';
+            return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
         }
 
-        let mensajesRestantes = esUsuarioPro ? 2000 : 10; 
+        // Consulta al servidor el estado real de la cuenta
+        async function cargarEstado() {
+            try {
+                const res = await fetch('/api/estado', { headers: await encabezadosSeguros() });
+                if (!res.ok) throw new Error('estado ' + res.status);
+                aplicarEstado(await res.json());
+            } catch (e) {
+                console.error('No se pudo cargar el estado de la cuenta', e);
+                const ui = document.getElementById('contador-ui');
+                if (ui) ui.innerText = '⚠️ Sin conexión';
+            }
+        }
+
+        function aplicarEstado(estado) {
+            if (!estado) return;
+            esUsuarioPro = estado.plan === 'PRO';
+            mensajesRestantes = esUsuarioPro ? null : Number(estado.mensajesRestantes);
+            actualizarContador();
+        }
 
         const mapaFondos = {
             "abogada": "abogada.PNG",
@@ -467,9 +485,11 @@
             const ui = document.getElementById('contador-ui');
             if (ui) {
                 if (esUsuarioPro) {
-                    ui.innerText = mensajesRestantes > 500 ? "💎 MODO PRO" : `💎 MODO PRO: ${mensajesRestantes} msng`;
+                    ui.innerText = "💎 MODO PRO";
                     ui.style.color = "var(--neon-purple)";
                     ui.style.textShadow = "0 0 10px rgba(142, 68, 173, 0.7)";
+                } else if (mensajesRestantes === null) {
+                    ui.innerText = "Cargando sistema...";
                 } else {
                     ui.innerText = `🔋 Créditos: ${mensajesRestantes}`;
                     ui.style.color = mensajesRestantes === 0 ? "#ff4d4d" : "var(--neon-green)";
@@ -477,7 +497,6 @@
                 }
             }
         }
-        setTimeout(actualizarContador, 200);
 
         window.botonAudioActivo = null;
         window.textosAudio = window.textosAudio || {}; 
@@ -489,6 +508,7 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUser = user;
+                cargarEstado();
                 const docSnap = await getDoc(doc(db, "usuarios", user.uid));
                 if (docSnap.exists()) { facetaActiva = docSnap.data().version_seleccionada || "ayuda"; }
                 renderizarMenu();
@@ -544,28 +564,6 @@
             
             if (!texto && !archivoDataBase64) return;
 
-            if (texto === "/Odin2026") {
-                mensajesRestantes = 2000; 
-                esUsuarioPro = true; 
-                localStorage.setItem('nelida_pro', 'true'); 
-                actualizarContador();
-                input.value = "";
-                input.style.height = 'auto';
-                zona.innerHTML += `<div style="color: var(--neon-green); text-align: center; margin: 15px 0; font-weight: bold;">🔓 ACCESO AUTORIZADO: MODO DIOS ACTIVADO.</div>`;
-                zona.scrollTop = zona.scrollHeight;
-                return;
-            }
-            
-            if (texto === "/Reset2026") {
-                localStorage.removeItem('nelida_pro');
-                input.value = "";
-                input.style.height = 'auto';
-                zona.innerHTML += `<div style="color: #ff4d4d; text-align: center; margin: 15px 0; font-weight: bold;">🔄 MEMORIA BORRADA...</div>`;
-                zona.scrollTop = zona.scrollHeight;
-                setTimeout(() => { window.location.reload(); }, 2000);
-                return;
-            }
-
             let mensajePantalla = texto;
             if (archivoNombre) {
                 mensajePantalla += `<br><span style="color:var(--neon-green); font-size:0.85em;">📎 Archivo adjunto: ${archivoNombre}</span>`;
@@ -581,19 +579,13 @@
 
             historialAcumulado.push({ role: "user", parts: [{ text: texto || "Revisa el documento adjunto." }] });
 
-            if (mensajesRestantes > 0) {
-                mensajesRestantes--; 
-                actualizarContador();
-            }
-
             try {
                 const response = await fetch('/api/chat', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        contents: historialAcumulado, 
-                        especialidad: facetaActiva, 
-                        mensajesRestantes: mensajesRestantes,
+                    headers: await encabezadosSeguros(),
+                    body: JSON.stringify({
+                        contents: historialAcumulado,
+                        especialidad: facetaActiva,
                         archivoBase64: archivoDataBase64,
                         archivoMime: archivoMimeType
                     })
@@ -602,6 +594,14 @@
                 window.quitarArchivo();
                 const data = await response.json();
                 if (document.getElementById(idCarga)) document.getElementById(idCarga).remove();
+
+                // El servidor nos dice cuántos mensajes quedan de verdad
+                if (data.nelida) aplicarEstado(data.nelida);
+
+                if (!response.ok) {
+                    historialAcumulado.pop();
+                    zona.innerHTML += `<div style="color: #ff4d4d; margin-bottom: 10px;">${data.error || 'Error de conexión.'}</div>`;
+                }
 
                 if (response.ok && data.candidates && data.candidates[0].content) {
                     let respuesta = data.candidates[0].content.parts[0].text;
@@ -749,9 +749,7 @@
         window.exportarWord = (id) => { const element = document.getElementById(id); const htmlCompleto = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>Documento</title></head><body>${element.innerHTML}</body></html>`; const blob = new Blob(['\ufeff' + htmlCompleto], { type: 'application/msword' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Documento_NelidaAI.doc'; a.click(); };
         window.exportarPPT = (id) => { const element = document.getElementById(id); let pptx = new pptxgen(); let slide = pptx.addSlide(); let posicionY = 1.0; element.querySelectorAll('h1, h2, h3, p, li').forEach(el => { if (posicionY < 6.0) { let esTitulo = el.tagName.startsWith('H'); slide.addText(el.innerText, { x: 1.0, y: posicionY, w: 8.0, h: esTitulo ? 0.5 : 0.8, fontSize: esTitulo ? 24 : 14, bold: esTitulo, color: esTitulo ? '8E44AD' : '333333' }); posicionY += esTitulo ? 0.6 : 0.9; } else { slide = pptx.addSlide(); posicionY = 1.0; } }); pptx.writeFile({ fileName: 'Presentacion_NelidaAI.pptx' }); };
        window.hablar = async (btnElement, idMsgUnico) => {
-            const esProActual = localStorage.getItem('nelida_pro') === 'true';
-            
-            if (!esProActual) {
+            if (!esUsuarioPro) {
                 alert("💎 La función de audio es exclusiva para usuarios PRO.");
                 window.location.href = 'checkout.html';
                 return;
@@ -773,7 +771,7 @@
             try {
                 const res = await fetch('/api/hablar', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: await encabezadosSeguros(),
                     body: JSON.stringify({ texto: textoLimpio })
                 });
 
