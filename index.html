@@ -12,6 +12,18 @@
             window.location.replace('login.html');
         }
     </script>
+    <style>
+        /* Barra legal: Botón de Arrepentimiento y Botón de Baja (Disposición 954/2025) */
+        .barra-legal {
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+            display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px 18px;
+            padding: 10px 16px; background: rgba(0, 0, 0, 0.96); border-top: 1px solid rgba(0, 255, 204, 0.3);
+            font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 13px;
+        }
+        .barra-legal a { color: #e5e5e5; text-decoration: none; }
+        .barra-legal a:hover { text-decoration: underline; }
+        .barra-legal .boton-legal { color: #fff; font-weight: bold; border: 1px solid #00ffcc; border-radius: 6px; padding: 6px 12px; }
+    </style>
     </head>
 <body>
 
@@ -20,6 +32,13 @@
 
         <button onclick="irALogin()" class="btn-unico-final"></button>
     </main>
+
+    <nav class="barra-legal" aria-label="Información legal">
+        <a class="boton-legal" href="tramite.html?tipo=arrepentimiento">Botón de Arrepentimiento</a>
+        <a class="boton-legal" href="tramite.html?tipo=baja">Botón de Baja de Servicio</a>
+        <a href="terminos.html">Términos de Servicio</a>
+        <a href="privacidad.html">Política de Privacidad</a>
+    </nav>
 
     <script>
         function irALogin() {
