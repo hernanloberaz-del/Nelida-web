@@ -136,6 +136,28 @@
             </div>
         </div>
 
+        <div class="seccion-panel">
+            <h2>Trámites: Botón de Baja y Botón de Arrepentimiento (responder en 24 h)</h2>
+            <div class="contenedor-tabla">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Código</th>
+                            <th>Tipo</th>
+                            <th>Nombre / Email</th>
+                            <th>Medio de pago</th>
+                            <th>Comentario</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-tramites-body">
+                        <tr><td colspan="7" style="text-align: center; color: rgba(255,255,255,0.4);">Cargando trámites...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="analisis-costos">
             <div class="seccion-panel">
                 <h2>Evaluación de Funcionamiento y Costos</h2>
@@ -187,7 +209,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         // CAMBIO: Importamos 'doc' para poder escuchar el documento único de analítica
-        import { getFirestore, collection, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
         // SEGURIDAD: el panel solo se muestra si iniciaste sesión con la cuenta de administrador
@@ -281,15 +303,16 @@
                             usuariosFreeSinCorreo++;
                         }
 
-                        const textoEmailTabla = esAnonimo ? `<span style="color:#888;">Ingreso Anónimo / ID: ${data.uid.substring(0, 5)}</span>` : emailUser;
-                        const faceta = data.version_seleccionada || "Ayuda General";
-                        const creditos = data.mensajesRestantes !== undefined ? data.mensajesRestantes : 10;
-                        
-                        const esPro = creditos > 500;
+                        // escapar(): evita que alguien meta código en su email o faceta para atacar el panel
+                        const textoEmailTabla = esAnonimo ? `<span style="color:#888;">Ingreso Anónimo / ID: ${escapar(data.uid.substring(0, 5))}</span>` : escapar(emailUser);
+                        const faceta = escapar(data.version_seleccionada || "Ayuda General");
+                        // El plan lo decide el servidor (campo "plan"); los mensajes usados los cuenta el servidor
+                        const esPro = data.plan === 'PRO';
                         if(esPro) contPro++;
-                        
-                        let mensajesConsumidos = esPro ? (2000 - creditos) : (10 - creditos);
-                        if (mensajesConsumidos < 0) mensajesConsumidos = 0;
+                        const usados = Number(data.mensajesUsados) || 0;
+                        const creditos = esPro ? '∞' : Math.max(0, 10 - usados);
+
+                        let mensajesConsumidos = usados;
 
                         consultasGeminiTotales += mensajesConsumidos;
 
@@ -350,6 +373,50 @@
             }
         }
 
+        // --- TRÁMITES (Botón de Baja / Botón de Arrepentimiento) ---
+        function escapar(t) {
+            return String(t || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        window.marcarTramite = async (codigo, estado) => {
+            try { await updateDoc(doc(db, "tramites", codigo), { estado, atendido: new Date().toISOString() }); }
+            catch (e) { alert('No se pudo actualizar: ' + e.message); }
+        };
+
+        function iniciarRadarTramites() {
+            const tabla = document.getElementById('tabla-tramites-body');
+            onSnapshot(collection(db, "tramites"), (snapshot) => {
+                const lista = [];
+                snapshot.forEach(d => lista.push(d.data()));
+                lista.sort((a, b) => String(b.creado).localeCompare(String(a.creado)));
+                if (lista.length === 0) {
+                    tabla.innerHTML = `<tr><td colspan="7" style="text-align: center; color: rgba(255,255,255,0.4);">No hay pedidos de baja ni de arrepentimiento.</td></tr>`;
+                    return;
+                }
+                const medios = { mercadopago: 'Mercado Pago', paypal: 'PayPal', nose: 'No sabe' };
+                tabla.innerHTML = lista.map(t => {
+                    const pendiente = t.estado !== 'resuelto';
+                    const horas = (Date.now() - Date.parse(t.creado)) / 3600000;
+                    const alerta = pendiente && horas > 18 ? ' style="color:#ff4d4d; font-weight:bold;"' : '';
+                    const tipo = t.tipo === 'arrepentimiento' ? '↩️ Arrepentimiento' : '🛑 Baja';
+                    const accion = pendiente
+                        ? `<button onclick="window.marcarTramite('${escapar(t.codigo)}','resuelto')" style="background:var(--neon-green); color:#000; border:none; border-radius:5px; padding:5px 10px; cursor:pointer; font-weight:bold;">Marcar resuelto</button>`
+                        : `<span class="badge free">RESUELTO</span>`;
+                    return `<tr>
+                        <td${alerta}>${formatearFecha(t.creado)}${pendiente ? `<br><small>hace ${Math.floor(horas)} h</small>` : ''}</td>
+                        <td style="font-family: monospace;">${escapar(t.codigo)}</td>
+                        <td>${tipo}</td>
+                        <td>${escapar(t.nombre)}<br><small style="color:#aaa">${escapar(t.email)}</small></td>
+                        <td>${medios[t.medio] || '-'}</td>
+                        <td style="max-width:260px; white-space:pre-wrap;">${escapar(t.comentario) || '-'}</td>
+                        <td>${accion}</td>
+                    </tr>`;
+                }).join('');
+            }, (error) => {
+                tabla.innerHTML = `<tr><td colspan="7" class="texto-error">No se pudieron leer los trámites: ${escapar(error.message)}</td></tr>`;
+            });
+        }
+
         // Los radares arrancan solo después de confirmar que entró el administrador
         onAuthStateChanged(auth, (user) => {
             const esAdmin = user && user.emailVerified && (user.email || "").toLowerCase() === CORREO_ADMIN;
@@ -360,6 +427,7 @@
             document.documentElement.style.visibility = 'visible';
             iniciarRadarPanel();
             iniciarRadarVisitasBrutas();
+            iniciarRadarTramites();
         });
     </script>
 </body>
