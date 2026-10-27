@@ -8,7 +8,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -24,6 +24,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
         
+        auth.languageCode = "es"; // los emails de Firebase (recuperar contraseña) llegan en español
         const googleProvider = new GoogleAuthProvider();
         const facebookProvider = new FacebookAuthProvider();
 
@@ -63,6 +64,21 @@
                 await actualizarUltimoLogin(result.user);
                 window.location.href = "checkout.html"; 
             } catch (e) { alert("Error Facebook: " + e.message); }
+        };
+
+        // --- OLVIDÉ MI CONTRASEÑA ---
+        window.recuperarClave = async () => {
+            let email = document.getElementById('email').value.trim();
+            if (!email) email = (prompt("Escribí el email de tu cuenta de Nélida:") || "").trim();
+            if (!email) return;
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert("⚠️ Ese email no es válido.");
+            try {
+                await sendPasswordResetEmail(auth, email);
+            } catch (e) {
+                if (e.code === 'auth/too-many-requests') return alert("⏳ Hiciste muchos intentos. Esperá unos minutos y probá de nuevo.");
+                // Por seguridad no decimos si el email existe o no
+            }
+            alert("📧 Si ese email tiene una cuenta en Nélida, te enviamos un enlace para crear una contraseña nueva. Revisá también la carpeta de spam.\n\nSi te registraste con Google o Facebook, no necesitás contraseña: usá ese botón.");
         };
 
         window.authEmail = async () => {
@@ -142,12 +158,13 @@
                 <input type="email" id="email" name="email" placeholder="Tu correo de Nélida" autocomplete="username" aria-label="Correo electrónico">
                 <input type="password" id="pass" name="password" placeholder="Tu contraseña de Nélida" autocomplete="current-password" aria-label="Contraseña">
                 <button type="submit" class="btn-entrar">Ingresar</button>
+                <a href="#" onclick="event.preventDefault(); window.recuperarClave();" class="volver-inicio" style="font-size:11.5px">¿Olvidaste tu contraseña?</a>
 
                 <a href="registro.html" class="btn-ir-registro">¿No tenés cuenta? Registrate acá</a>
             </form>
 
             <div class="legal-footer">
-                Al ingresar, aceptás nuestros <br>
+                Al ingresar, confirmás que sos mayor de 18 años y aceptás nuestros <br>
                 <a href="terminos.html">Términos de Servicio</a> y la <a href="privacidad.html">Política de Privacidad</a>.
             </div>
             <div class="legal-footer" style="margin-top:0">
