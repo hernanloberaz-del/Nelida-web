@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baja de servicio y arrepentimiento - Nélida AI</title>
+    <meta name="description" content="Botón de Baja de Servicio y Botón de Arrepentimiento de Nélida AI (nelida.com.ar). No hace falta iniciar sesión.">
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #050505; background-image: radial-gradient(circle at 50% 30%, #1a1a2e 0%, #000 100%); color: #e5e5e5; font-family: 'Segoe UI', Tahoma, sans-serif; line-height: 1.6; min-height: 100vh; }
+        main { max-width: 620px; margin: 0 auto; padding: 36px 16px 60px; }
+        h1 { color: #00ffcc; font-size: 1.7em; margin: 10px 0 6px; }
+        a { color: #00ffcc; }
+        .pestanas { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+        .pestana { flex: 1; min-width: 200px; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.04); color: #fff; font-weight: bold; font-size: 1em; cursor: pointer; }
+        .pestana.activa { border-color: #00ffcc; background: rgba(0,255,204,0.1); color: #00ffcc; }
+        .caja { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,255,204,0.25); border-radius: 14px; padding: 22px; }
+        label { display: block; font-size: 0.85em; color: #aaa; margin: 14px 0 6px; }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,255,204,0.3); background: rgba(0,0,0,0.6); color: #fff; font-size: 1em; font-family: inherit; }
+        textarea { min-height: 80px; resize: vertical; }
+        button.enviar { width: 100%; margin-top: 20px; padding: 15px; border: none; border-radius: 10px; background: #8e44ad; color: #fff; font-weight: bold; font-size: 1.05em; cursor: pointer; }
+        button.enviar:disabled { opacity: 0.6; cursor: wait; }
+        .explica { font-size: 0.92em; color: #ccc; }
+        .error { color: #ff6b6b; min-height: 1.2em; margin-top: 10px; }
+        .exito { display: none; text-align: center; }
+        .codigo { font-family: monospace; font-size: 1.5em; letter-spacing: 2px; color: #00ffcc; background: rgba(0,255,204,0.08); border: 1px dashed #00ffcc; border-radius: 10px; padding: 14px; margin: 16px 0; word-break: break-all; }
+        .oculto { position: absolute; left: -9999px; }
+    </style>
+</head>
+<body>
+<main>
+    <a href="index.html">← Volver a Nélida</a>
+    <h1 id="titulo">Botón de Baja de Servicio</h1>
+    <p class="explica">No hace falta iniciar sesión. Completá el formulario y vas a recibir un <b>código de trámite</b>. Te respondemos dentro de las 24 horas al email que indiques.</p>
+
+    <div class="pestanas">
+        <button type="button" class="pestana activa" id="tab-baja" onclick="elegir('baja')">Botón de Baja de Servicio</button>
+        <button type="button" class="pestana" id="tab-arrepentimiento" onclick="elegir('arrepentimiento')">Botón de Arrepentimiento</button>
+    </div>
+
+    <div class="caja">
+        <form id="formulario" onsubmit="enviar(event)">
+            <p class="explica" id="descripcion"></p>
+
+            <label for="nombre">Nombre y apellido</label>
+            <input id="nombre" required maxlength="100" autocomplete="name">
+
+            <label for="email">Email de tu cuenta de Nélida</label>
+            <input id="email" type="email" required maxlength="150" autocomplete="email">
+
+            <label for="medio">¿Con qué pagaste la suscripción?</label>
+            <select id="medio">
+                <option value="mercadopago">Mercado Pago</option>
+                <option value="paypal">PayPal</option>
+                <option value="nose">No sé / no recuerdo</option>
+            </select>
+
+            <label for="comentario">Comentario (opcional)</label>
+            <textarea id="comentario" maxlength="1000"></textarea>
+
+            <input class="oculto" id="sitio" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+            <button type="submit" class="enviar" id="btn-enviar">Enviar pedido</button>
+            <p class="error" id="error"></p>
+        </form>
+
+        <div class="exito" id="exito">
+            <h2 style="color:#fff; margin-top:0">✅ Recibimos tu pedido</h2>
+            <p>Guardá este <b>código de trámite</b>:</p>
+            <div class="codigo" id="codigo"></div>
+            <p class="explica">Te vamos a responder dentro de las 24 horas a tu email. Si tenés dudas, escribinos a <a href="mailto:nelida.oficial.ar@gmail.com">nelida.oficial.ar@gmail.com</a> indicando este código.</p>
+        </div>
+    </div>
+
+    <p class="explica" style="margin-top:24px">Más información en los <a href="terminos.html">Términos de Servicio</a> y la <a href="privacidad.html">Política de Privacidad</a>.</p>
+</main>
+
+<script>
+    const textos = {
+        baja: {
+            titulo: 'Botón de Baja de Servicio',
+            descripcion: 'Pedí la baja de tu suscripción Nélida PRO. Es gratis y no tenés que dar explicaciones. Desde la baja no se harán nuevos cobros.'
+        },
+        arrepentimiento: {
+            titulo: 'Botón de Arrepentimiento',
+            descripcion: 'Si contrataste Nélida PRO hace 10 días corridos o menos, podés arrepentirte sin costo y te devolvemos lo pagado (art. 34, Ley 24.240).'
+        }
+    };
+    let tipoActual = 'baja';
+
+    function elegir(tipo) {
+        tipoActual = tipo;
+        document.getElementById('titulo').innerText = textos[tipo].titulo;
+        document.getElementById('descripcion').innerText = textos[tipo].descripcion;
+        document.getElementById('tab-baja').classList.toggle('activa', tipo === 'baja');
+        document.getElementById('tab-arrepentimiento').classList.toggle('activa', tipo === 'arrepentimiento');
+    }
+
+    async function enviar(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-enviar');
+        const error = document.getElementById('error');
+        error.innerText = '';
+        btn.disabled = true;
+        btn.innerText = 'Enviando...';
+        try {
+            const res = await fetch('/api/tramite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tipo: tipoActual,
+                    nombre: document.getElementById('nombre').value,
+                    email: document.getElementById('email').value,
+                    medio: document.getElementById('medio').value,
+                    comentario: document.getElementById('comentario').value,
+                    sitio: document.getElementById('sitio').value
+                })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.codigo) throw new Error(data.error || 'No se pudo enviar.');
+            document.getElementById('codigo').innerText = data.codigo;
+            document.getElementById('formulario').style.display = 'none';
+            document.getElementById('exito').style.display = 'block';
+            document.querySelector('.pestanas').style.display = 'none';
+        } catch (err) {
+            error.innerText = err.message + ' Si el problema sigue, escribinos a nelida.oficial.ar@gmail.com.';
+            btn.disabled = false;
+            btn.innerText = 'Enviar pedido';
+        }
+    }
+
+    // Abre directo la pestaña pedida: tramite.html?tipo=arrepentimiento
+    const pedido = new URLSearchParams(location.search).get('tipo');
+    elegir(pedido === 'arrepentimiento' ? 'arrepentimiento' : 'baja');
+</script>
+</body>
+</html>
