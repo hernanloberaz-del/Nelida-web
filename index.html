@@ -2,50 +2,197 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nélida AI - Inicio</title>
-    <link rel="stylesheet" href="style.css">
-    
-    <script>
-        // Si el sistema detecta que es un celular o la pantalla es pequeña, salta instantáneamente al login
-        if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 800) {
-            window.location.replace('login.html');
-        }
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nélida AI - Tu asistente con inteligencia artificial | nelida.com.ar</title>
+    <meta name="description" content="Nélida AI es una asistente con inteligencia artificial con 19 especialidades: entrenadora, economista, abogada, mecánica, coach de pádel y más. Probala gratis con 10 mensajes, sin tarjeta.">
+    <link rel="canonical" href="https://nelida.com.ar/">
+    <meta property="og:title" content="Nélida AI - Tu asistente con inteligencia artificial">
+    <meta property="og:description" content="19 especialidades en una sola app. Probala gratis: 10 mensajes sin tarjeta.">
+    <meta property="og:image" content="https://nelida.com.ar/nelida-portada.jpg">
+    <meta property="og:url" content="https://nelida.com.ar/">
     <style>
-        /* Barra legal: Botón de Arrepentimiento y Botón de Baja (Disposición 954/2025) */
-        .barra-legal {
-            position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-            display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px 18px;
-            padding: 10px 16px; background: rgba(0, 0, 0, 0.96); border-top: 1px solid rgba(0, 255, 204, 0.3);
-            font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 13px;
+        :root { --verde: #00ffcc; --violeta: #8e44ad; --texto: #e8e8e8; --suave: #a8a8b3; --fondo: #07070b; --caja: #12121a; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { background: var(--fondo); color: var(--texto); font-family: 'Segoe UI', Tahoma, -apple-system, sans-serif; line-height: 1.6; }
+        a { color: var(--verde); }
+        .contenedor { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+        /* Barra superior */
+        header { position: sticky; top: 0; z-index: 20; background: rgba(7,7,11,0.92); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(0,255,204,0.15); }
+        header .contenedor { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+        .logo { font-weight: 800; font-size: 1.3em; color: #fff; text-decoration: none; letter-spacing: 1px; }
+        .logo span { color: var(--verde); }
+        .nav-btn { color: #fff; text-decoration: none; border: 1px solid var(--verde); padding: 7px 14px; border-radius: 8px; font-weight: 600; font-size: 0.9em; }
+
+        /* Portada */
+        .hero { position: relative; min-height: 78vh; display: flex; align-items: center; overflow: hidden; }
+        .hero picture, .hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 20%; }
+        .hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,7,11,0.95) 0%, rgba(7,7,11,0.75) 45%, rgba(7,7,11,0.1) 100%); }
+        .hero .contenedor { position: relative; z-index: 2; width: 100%; padding-top: 40px; padding-bottom: 40px; }
+        .hero h1 { font-size: clamp(2em, 5vw, 3.3em); line-height: 1.15; color: #fff; max-width: 560px; }
+        .hero h1 span { color: var(--verde); }
+        .hero p { font-size: 1.15em; max-width: 520px; margin: 18px 0 26px; color: #ddd; }
+        .botones { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn { display: inline-block; text-decoration: none; padding: 15px 26px; border-radius: 12px; font-weight: 800; font-size: 1.05em; text-align: center; }
+        .btn-principal { background: var(--violeta); color: #fff; box-shadow: 0 6px 22px rgba(142,68,173,0.45); }
+        .btn-secundario { border: 2px solid rgba(255,255,255,0.6); color: #fff; }
+        .nota { font-size: 0.9em; color: var(--suave); margin-top: 12px; }
+
+        section { padding: 56px 0; }
+        h2 { font-size: 1.8em; color: #fff; margin-bottom: 8px; }
+        .bajada { color: var(--suave); margin-bottom: 28px; }
+
+        /* Facetas */
+        .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+        .tarjeta { background: var(--caja); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; }
+        .tarjeta img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+        .tarjeta div { padding: 12px 14px 16px; }
+        .tarjeta h3 { color: #fff; font-size: 1.05em; }
+        .tarjeta p { color: var(--suave); font-size: 0.92em; }
+        .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+        .chips span { border: 1px solid rgba(0,255,204,0.3); color: #ddd; border-radius: 20px; padding: 5px 12px; font-size: 0.9em; }
+
+        /* Pasos */
+        .pasos { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+        .paso { background: var(--caja); border-radius: 14px; padding: 22px; border-left: 4px solid var(--verde); }
+        .paso b { color: var(--verde); font-size: 1.4em; display: block; }
+
+        /* Precios */
+        .planes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+        .plan { background: var(--caja); border-radius: 16px; padding: 26px; border: 1px solid rgba(255,255,255,0.1); }
+        .plan.pro { border: 2px solid var(--violeta); }
+        .plan h3 { color: #fff; font-size: 1.3em; }
+        .precio { font-size: 2em; font-weight: 800; color: #fff; margin: 8px 0; }
+        .precio small { font-size: 0.45em; color: var(--suave); font-weight: 400; }
+        .plan ul { list-style: none; margin: 12px 0 20px; }
+        .plan li { padding: 4px 0; }
+        .plan li::before { content: '✓ '; color: var(--verde); font-weight: bold; }
+
+        .aviso { background: rgba(255,77,77,0.07); border: 1px solid rgba(255,77,77,0.35); border-radius: 12px; padding: 16px 18px; font-size: 0.95em; }
+
+        footer { border-top: 1px solid rgba(0,255,204,0.2); padding: 30px 0 40px; font-size: 0.92em; color: var(--suave); }
+        .legales { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 16px; }
+        .legales .boton-legal { color: #fff; font-weight: bold; border: 1px solid var(--verde); border-radius: 6px; padding: 6px 12px; text-decoration: none; }
+
+        @media (max-width: 700px) {
+            .hero { min-height: auto; align-items: flex-end; }
+            .hero picture, .hero img { position: relative; height: 62vh; }
+            .hero::after { background: linear-gradient(180deg, rgba(7,7,11,0) 30%, rgba(7,7,11,0.85) 62%, var(--fondo) 75%); }
+            .hero .contenedor { position: absolute; bottom: 0; padding-bottom: 24px; }
+            .hero h1 { font-size: 2em; }
+            .hero p { font-size: 1.02em; margin: 10px 0 18px; }
+            .btn { width: 100%; }
+            section { padding: 40px 0; }
         }
-        .barra-legal a { color: #e5e5e5; text-decoration: none; }
-        .barra-legal a:hover { text-decoration: underline; }
-        .barra-legal .boton-legal { color: #fff; font-weight: bold; border: 1px solid #00ffcc; border-radius: 6px; padding: 6px 12px; }
     </style>
-    </head>
+</head>
 <body>
 
-    <main class="contenedor-unico">
-        <img src="1.png" alt="Nélida AI" class="imagen-total">
+<header>
+    <div class="contenedor">
+        <a class="logo" href="index.html">Nélida <span>AI</span></a>
+        <a class="nav-btn" href="login.html">Ingresar</a>
+    </div>
+</header>
 
-        <button onclick="irALogin()" class="btn-unico-final"></button>
-    </main>
+<main>
+    <!-- PORTADA -->
+    <section class="hero" style="padding:0">
+        <picture>
+            <source media="(max-width: 700px)" srcset="nelida-portada-cel.jpg">
+            <img src="nelida-portada.jpg" alt="Nélida, asistente con inteligencia artificial" width="1343" height="707">
+        </picture>
+        <div class="contenedor">
+            <h1>Hola, soy <span>Nélida</span>. Tu asistente con inteligencia artificial.</h1>
+            <p>19 especialidades en una sola app: entrenadora, economista, abogada, mecánica, coach de pádel y mucho más. Te respondo al instante, las 24 horas.</p>
+            <div class="botones">
+                <a class="btn btn-principal" href="registro.html">Probala gratis</a>
+                <a class="btn btn-secundario" href="login.html">Ya tengo cuenta</a>
+            </div>
+            <p class="nota">10 mensajes gratis · Sin tarjeta · Solo mayores de 18 años</p>
+        </div>
+    </section>
 
-    <nav class="barra-legal" aria-label="Información legal">
-        <a class="boton-legal" href="tramite.html?tipo=arrepentimiento">Botón de Arrepentimiento</a>
-        <a class="boton-legal" href="tramite.html?tipo=baja">Botón de Baja de Servicio</a>
-        <a href="terminos.html">Términos de Servicio</a>
-        <a href="privacidad.html">Política de Privacidad</a>
-    </nav>
+    <!-- FACETAS -->
+    <section id="facetas">
+        <div class="contenedor">
+            <h2>Una Nélida para cada necesidad</h2>
+            <p class="bajada">Elegí la especialidad y consultale lo que quieras. Te puede armar planes, planillas, informes y presentaciones.</p>
+            <div class="grilla">
+                <article class="tarjeta"><img src="faceta-trainer.jpg" alt="Nélida entrenadora personal" loading="lazy"><div><h3>Entrenadora personal</h3><p>Rutinas según tu nivel y tu tiempo.</p></div></article>
+                <article class="tarjeta"><img src="faceta-economia.jpg" alt="Nélida economista" loading="lazy"><div><h3>Economía</h3><p>Ordená tus gastos y armá tu presupuesto.</p></div></article>
+                <article class="tarjeta"><img src="faceta-abogada.jpg" alt="Nélida abogada" loading="lazy"><div><h3>Abogada</h3><p>Orientación sobre contratos, trámites y derechos.</p></div></article>
+                <article class="tarjeta"><img src="faceta-medica.jpg" alt="Nélida médica" loading="lazy"><div><h3>Médica</h3><p>Información de salud y prevención.</p></div></article>
+                <article class="tarjeta"><img src="faceta-padel.jpg" alt="Nélida coach de pádel" loading="lazy"><div><h3>Coach de pádel</h3><p>Técnica, táctica y entrenamiento.</p></div></article>
+                <article class="tarjeta"><img src="faceta-maestra.jpg" alt="Nélida maestra" loading="lazy"><div><h3>Maestra</h3><p>Ayuda con tareas de matemática, física y más.</p></div></article>
+                <article class="tarjeta"><img src="faceta-mecanica.jpg" alt="Nélida mecánica" loading="lazy"><div><h3>Mecánica</h3><p>Diagnóstico y mantenimiento de tu auto.</p></div></article>
+                <article class="tarjeta"><img src="faceta-seguridad.jpg" alt="Nélida técnica en seguridad e higiene" loading="lazy"><div><h3>Seguridad e higiene</h3><p>Prevención de riesgos, EPP y normativas.</p></div></article>
+            </div>
+            <div class="chips" aria-label="Todas las especialidades">
+                <span>Asistente personal</span><span>Artes marciales</span><span>Ayuda y primeros auxilios</span><span>Contratista</span><span>Infantes</span><span>Mejora continua</span><span>Pesca</span><span>Psicóloga</span><span>Sexóloga</span><span>Tenis</span><span>Terapia de parejas</span>
+            </div>
+        </div>
+    </section>
 
-    <script>
-        function irALogin() {
-            // Lógica de redirección original para usuarios en computadora
-            window.location.href = 'login.html';
-        }
-    </script>
+    <!-- CÓMO FUNCIONA -->
+    <section style="background: #0b0b12;">
+        <div class="contenedor">
+            <h2>Cómo funciona</h2>
+            <p class="bajada">Empezás en menos de un minuto.</p>
+            <div class="pasos">
+                <div class="paso"><b>1</b>Creá tu cuenta con tu email, Google o Facebook.</div>
+                <div class="paso"><b>2</b>Elegí la Nélida que necesitás.</div>
+                <div class="paso"><b>3</b>Preguntale lo que quieras y recibí la respuesta al instante.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PRECIOS -->
+    <section id="precios">
+        <div class="contenedor">
+            <h2>Precios</h2>
+            <p class="bajada">Probá primero. Si te sirve, pasate a PRO. Te das de baja cuando quieras.</p>
+            <div class="planes">
+                <div class="plan">
+                    <h3>Gratis</h3>
+                    <div class="precio">$0</div>
+                    <ul><li>10 mensajes de prueba</li><li>Todas las especialidades</li><li>Sin tarjeta</li></ul>
+                    <a class="btn btn-secundario" href="registro.html">Empezar gratis</a>
+                </div>
+                <div class="plan pro">
+                    <h3>Nélida PRO</h3>
+                    <div class="precio">$13.999 <small>ARS / mes</small></div>
+                    <p style="color: var(--verde); margin-top:-6px;">o USD 9,99 / mes desde el exterior</p>
+                    <ul><li>Mensajes ilimitados</li><li>Informes en PDF, planillas Excel, Word y PowerPoint</li><li>Respuestas en voz</li><li>Baja en cualquier momento</li></ul>
+                    <a class="btn btn-principal" href="registro.html">Quiero Nélida PRO</a>
+                </div>
+            </div>
+            <p class="nota">Pagos seguros con Mercado Pago o PayPal. Nélida nunca ve los datos de tu tarjeta.</p>
+        </div>
+    </section>
+
+    <!-- AVISO -->
+    <section style="padding-top: 0;">
+        <div class="contenedor">
+            <p class="aviso"><b>Importante:</b> Nélida es una inteligencia artificial. Su información es orientativa y <b>no reemplaza</b> la consulta con médicos, psicólogos, abogados u otros profesionales. Ante una emergencia, llamá al <b>911</b> (o al 107 para emergencias médicas).</p>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="contenedor">
+        <nav class="legales" aria-label="Información legal">
+            <a class="boton-legal" href="tramite.html?tipo=arrepentimiento">Botón de Arrepentimiento</a>
+            <a class="boton-legal" href="tramite.html?tipo=baja">Botón de Baja de Servicio</a>
+            <a href="terminos.html">Términos de Servicio</a>
+            <a href="privacidad.html">Política de Privacidad</a>
+        </nav>
+        <p>Nélida AI es un servicio de <b>NELIDA.AI</b> · Villa Constitución, Santa Fe, Argentina · Contacto: <a href="mailto:nelida.oficial.ar@gmail.com">nelida.oficial.ar@gmail.com</a></p>
+        <p>Seguinos en TikTok: <a href="https://www.tiktok.com/@nelida.ia" target="_blank" rel="noopener">@nelida.ia</a></p>
+        <p style="margin-top:10px;">© 2026 NELIDA.AI. Contenido e imágenes generados con inteligencia artificial.</p>
+    </div>
+</footer>
 
 </body>
 </html>
