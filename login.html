@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta name="robots" content="noindex, follow">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Iniciar sesión en Nélida AI - nelida.com.ar</title>
-    <meta name="description" content="Iniciá sesión en tu cuenta de Nélida AI (nelida.com.ar), asistente de inteligencia artificial con 18 especialidades. Esta página es solo para usuarios de Nélida.">
+    <meta name="description" content="Iniciá sesión en tu cuenta de Nélida AI (nelida.com.ar), asistente de inteligencia artificial con 19 especialidades. Esta página es solo para usuarios de Nélida.">
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
@@ -54,7 +55,7 @@
             try {
                 const result = await signInWithPopup(auth, googleProvider);
                 await actualizarUltimoLogin(result.user);
-                window.location.href = "checkout.html"; 
+                window.location.href = "menu.html"; 
             } catch (e) { alert("Error Google: " + e.message); }
         };
 
@@ -62,7 +63,7 @@
             try {
                 const result = await signInWithPopup(auth, facebookProvider);
                 await actualizarUltimoLogin(result.user);
-                window.location.href = "checkout.html"; 
+                window.location.href = "menu.html"; 
             } catch (e) { alert("Error Facebook: " + e.message); }
         };
 
@@ -90,7 +91,7 @@
             try {
                 const result = await signInWithEmailAndPassword(auth, email, pass);
                 await actualizarUltimoLogin(result.user);
-                window.location.href = "checkout.html"; 
+                window.location.href = "menu.html"; 
             } catch (e) {
                 alert("❌ El correo o la contraseña son incorrectos. Si todavía no tenés una cuenta, hacé clic abajo en 'Registrate acá'.");
             }
@@ -143,7 +144,7 @@
         <main class="columna-izquierda">
             <div class="marca">
                 <h1>Nélida <span>AI</span></h1>
-                <p>Asistente de inteligencia artificial con 18 especialidades. Ingresá a tu cuenta de nelida.com.ar para chatear con Nélida.</p>
+                <p>Asistente de inteligencia artificial con 19 especialidades. Ingresá a tu cuenta de nelida.com.ar para chatear con Nélida.</p>
             </div>
             <p class="aviso-cuenta">Usás tu cuenta de Google o Facebook solo para identificarte. Nélida nunca ve ni guarda tu contraseña de Google o Facebook.</p>
             <button class="btn-social" onclick="window.loginConGoogle()">
