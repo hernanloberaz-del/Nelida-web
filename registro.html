@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta name="robots" content="noindex, follow">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Crear cuenta en Nélida AI - nelida.com.ar</title>
-    <meta name="description" content="Creá tu cuenta en Nélida AI (nelida.com.ar), asistente de inteligencia artificial con 18 especialidades.">
+    <meta name="description" content="Creá tu cuenta en Nélida AI (nelida.com.ar), asistente de inteligencia artificial con 19 especialidades.">
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -81,12 +82,35 @@
                 try { await sendEmailVerification(result.user); } catch (e) { console.warn("No se pudo enviar la verificación", e); }
 
                 alert("✅ ¡Cuenta creada! Te enviamos un email para verificar tu dirección (revisá también spam).");
-                window.location.href = "checkout.html";
+                window.location.href = "menu.html";
             } catch (error) {
                 console.error(error);
                 mostrarError(mensajeDeError(error));
                 btn.disabled = false;
                 btn.innerText = "Registrarse y continuar";
+            }
+        };
+
+        // Registro con Google
+        window.registroGoogle = async () => {
+            mostrarError('');
+            if (!document.getElementById('reg-acepta').checked) return mostrarError("⚠️ Antes de continuar con Google, marcá la casilla: confirmás que sos mayor de 18 años y aceptás los Términos y la Política de Privacidad.");
+            try {
+                const result = await signInWithPopup(auth, new GoogleAuthProvider());
+                const u = result.user;
+                await setDoc(doc(db, "usuarios", u.uid), {
+                    nombre: u.displayName || "",
+                    email: u.email || "Usuario sin email",
+                    pais: navigator.language || "es-AR",
+                    mayorDeEdad: true,
+                    aceptoTerminos: serverTimestamp(),
+                    ultimo_acceso: serverTimestamp()
+                }, { merge: true });
+                window.location.href = "menu.html";
+            } catch (error) {
+                if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') return;
+                console.error(error);
+                mostrarError(mensajeDeError(error));
             }
         };
 
@@ -101,53 +125,53 @@
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body, html { 
-            width: 100%; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
-            background: #000; 
-            font-family: -apple-system, 'Segoe UI', sans-serif; 
+
+        body, html {
+            width: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: #000;
+            font-family: -apple-system, 'Segoe UI', sans-serif;
         }
-        
-        .contenedor { 
-            position: relative; 
-            width: 100%; 
-            min-height: 100vh; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px; 
+
+        .contenedor {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
-        
-        .img-fondo { 
-            width: 100vw; 
-            height: 100vh; 
-            object-fit: cover; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            z-index: 1; 
-            filter: brightness(0.6); 
+
+        .img-fondo {
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            filter: brightness(0.6);
         }
-        
-        .caja-registro { 
-            position: relative; 
-            width: 100%; 
-            max-width: 360px; 
-            z-index: 10; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 14px; 
-            background: rgba(0, 0, 0, 0.78); 
-            padding: 28px; 
-            border-radius: 20px; 
-            backdrop-filter: blur(10px); 
-            border: 1px solid rgba(0, 255, 204, 0.2); 
-            box-shadow: 0 0 25px rgba(0, 255, 204, 0.15); 
-            margin: auto; 
+
+        .caja-registro {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: rgba(0, 0, 0, 0.78);
+            padding: 28px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.15);
+            margin: auto;
         }
-        
+
         h2 { color: #fff; font-family: 'Segoe UI', sans-serif; font-size: 1.4em; text-align: center; letter-spacing: 1px; margin-bottom: 5px; }
         h2 span { color: #00ffcc; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
@@ -166,6 +190,10 @@
         .subtitulo { color: rgba(255,255,255,0.8); font-size: 12px; text-align: center; line-height: 1.4; margin-top: -8px; }
         .btn-volver { background: transparent; color: #aaa; border: none; font-size: 12px; cursor: pointer; text-align: center; text-decoration: underline; }
         .volver-inicio { color: #00ffcc; font-size: 12px; text-align: center; text-decoration: none; }
+        .btn-google { display: flex; align-items: center; justify-content: center; gap: 10px; background: #fff; color: #333; border: none; padding: 12px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-google:hover { background: #eee; }
+        .separador { display: flex; align-items: center; gap: 10px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+        .separador::before, .separador::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.15); }
         .pie-legal { font-size: 10.5px; text-align: center; }
         .pie-legal a { color: #00ffcc; text-decoration: none; font-weight: bold; }
     </style>
@@ -176,7 +204,17 @@
 
         <main class="caja-registro">
             <h2>Crear cuenta en <span>Nélida</span></h2>
-            <p class="subtitulo">Asistente de inteligencia artificial con 18 especialidades. Tu cuenta es solo para usar nelida.com.ar.</p>
+            <p class="subtitulo">Asistente de inteligencia artificial con 19 especialidades. Tu cuenta es solo para usar nelida.com.ar.</p>
+
+            <label class="acepta" style="text-transform:none; letter-spacing:0; font-weight:normal;">
+                <input type="checkbox" id="reg-acepta">
+                <span>Soy <b>mayor de 18 años</b> y acepto los <a href="terminos.html" target="_blank">Términos de Servicio</a> y la <a href="privacidad.html" target="_blank">Política de Privacidad</a>.</span>
+            </label>
+
+            <div class="error-registro" id="error-registro"></div>
+
+            <button type="button" class="btn-google" onclick="window.registroGoogle()"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg> Continuar con Google</button>
+            <div class="separador"><span>o con tu email</span></div>
 
             <form onsubmit="event.preventDefault(); window.crearCuentaEmail();" style="display:flex; flex-direction:column; gap:14px;">
                 <div class="form-group">
@@ -201,13 +239,6 @@
                     <label for="reg-pass2">Repetí la contraseña</label>
                     <input type="password" id="reg-pass2" placeholder="Escribila de nuevo" autocomplete="new-password">
                 </div>
-
-                <label class="acepta" style="text-transform:none; letter-spacing:0; font-weight:normal;">
-                    <input type="checkbox" id="reg-acepta">
-                    <span>Soy <b>mayor de 18 años</b> y acepto los <a href="terminos.html" target="_blank">Términos de Servicio</a> y la <a href="privacidad.html" target="_blank">Política de Privacidad</a>.</span>
-                </label>
-
-                <div class="error-registro" id="error-registro"></div>
 
                 <button type="submit" class="btn-registrar" id="btn-registrar">Registrarse y continuar</button>
             </form>
