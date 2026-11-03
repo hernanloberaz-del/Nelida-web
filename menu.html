@@ -26,10 +26,18 @@
 
         let usuarioActual = null;
 
+        // Faceta elegida desde la portada (menu.html?f=trainer). Se guarda por si hay que registrarse antes.
+        const IDS_VALIDOS = ["abogada","artes_marciales","asistente","ayuda","contratista","Economia","infantes","maestra","mecanica","medica","mejora_continua","trainer","padel","pesca","psicologa","seguridad_higiene","sexologa","tenis","terapia_parejas"];
+        try {
+            const pedida = new URLSearchParams(window.location.search).get('f');
+            if (pedida && IDS_VALIDOS.includes(pedida)) localStorage.setItem('nelida_faceta_elegida', pedida);
+        } catch (e) {}
+
         onAuthStateChanged(auth, async (user) => {
             if (user) { 
                 usuarioActual = user; 
                 
+                // --- PROCESAMIENTO DE PAGO BLINDADO CON CLAVE SECRETA ---
                 // (Eliminado: la activación PRO por enlace secreto. Ahora solo la hace el servidor.)
                 if (window.location.search) window.history.replaceState({}, document.title, window.location.pathname);
 
@@ -44,8 +52,19 @@
                     }
                 } catch (e) { console.error("Error validando estado:", e); }
 
+                // Si eligió una faceta en la portada, entra directo a esa Nélida
+                let elegida = null;
+                try { elegida = localStorage.getItem('nelida_faceta_elegida'); localStorage.removeItem('nelida_faceta_elegida'); } catch (e) {}
+                if (elegida && IDS_VALIDOS.includes(elegida)) {
+                    try { await setDoc(doc(db, "usuarios", user.uid), { version_seleccionada: elegida }, { merge: true }); } catch (e) {}
+                    window.location.href = "interaccion.html";
+                    return;
+                }
+
             } else { 
-                window.location.href = "login.html"; 
+                // Sin cuenta: primero se registra (la faceta elegida queda guardada)
+                const elegida = (() => { try { return localStorage.getItem('nelida_faceta_elegida'); } catch (e) { return null; } })();
+                window.location.href = elegida ? "registro.html" : "login.html"; 
             }
         });
 
