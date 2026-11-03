@@ -45,13 +45,17 @@
 
         /* Facetas */
         .grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+        .tarjeta { display: block; text-decoration: none; transition: transform .2s, border-color .2s; }
+        .tarjeta:hover { transform: translateY(-3px); border-color: rgba(0,255,204,0.5); }
+        .tarjeta .probar { display: block; padding: 0 14px 14px; color: #00ffcc; font-weight: bold; font-size: 0.9em; }
         .tarjeta { background: var(--caja); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; }
         .tarjeta img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
         .tarjeta div { padding: 12px 14px 16px; }
         .tarjeta h3 { color: #fff; font-size: 1.05em; }
         .tarjeta p { color: var(--suave); font-size: 0.92em; }
         .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
-        .chips span { border: 1px solid rgba(0,255,204,0.3); color: #ddd; border-radius: 20px; padding: 5px 12px; font-size: 0.9em; }
+        .chips a { text-decoration: none; }
+        .chips a { border: 1px solid rgba(0,255,204,0.3); color: #ddd; border-radius: 20px; padding: 5px 12px; font-size: 0.9em; }
 
         /* Pasos */
         .pasos { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
@@ -118,19 +122,19 @@
     <section id="facetas">
         <div class="contenedor">
             <h2>Una Nélida para cada necesidad</h2>
-            <p class="bajada">Elegí la especialidad y consultale lo que quieras. Te puede armar planes, planillas, informes y presentaciones.</p>
+            <p class="bajada">Tocá una especialidad para probarla gratis. Te puede armar planes, planillas, informes y presentaciones.</p>
             <div class="grilla">
-                <article class="tarjeta"><img src="faceta-trainer.jpg" alt="Nélida entrenadora personal" loading="lazy"><div><h3>Entrenadora personal</h3><p>Rutinas según tu nivel y tu tiempo.</p></div></article>
-                <article class="tarjeta"><img src="faceta-economia.jpg" alt="Nélida economista" loading="lazy"><div><h3>Economía</h3><p>Ordená tus gastos y armá tu presupuesto.</p></div></article>
-                <article class="tarjeta"><img src="faceta-abogada.jpg" alt="Nélida abogada" loading="lazy"><div><h3>Abogada</h3><p>Orientación sobre contratos, trámites y derechos.</p></div></article>
-                <article class="tarjeta"><img src="faceta-medica.jpg" alt="Nélida médica" loading="lazy"><div><h3>Médica</h3><p>Información de salud y prevención.</p></div></article>
-                <article class="tarjeta"><img src="faceta-padel.jpg" alt="Nélida coach de pádel" loading="lazy"><div><h3>Coach de pádel</h3><p>Técnica, táctica y entrenamiento.</p></div></article>
-                <article class="tarjeta"><img src="faceta-maestra.jpg" alt="Nélida maestra" loading="lazy"><div><h3>Maestra</h3><p>Ayuda con tareas de matemática, física y más.</p></div></article>
-                <article class="tarjeta"><img src="faceta-mecanica.jpg" alt="Nélida mecánica" loading="lazy"><div><h3>Mecánica</h3><p>Diagnóstico y mantenimiento de tu auto.</p></div></article>
-                <article class="tarjeta"><img src="faceta-seguridad.jpg" alt="Nélida técnica en seguridad e higiene" loading="lazy"><div><h3>Seguridad e higiene</h3><p>Prevención de riesgos, EPP y normativas.</p></div></article>
+                <a class="tarjeta" href="menu.html?f=trainer"><img src="faceta-trainer.jpg" alt="Nélida entrenadora personal" loading="lazy"><div><h3>Entrenadora personal</h3><p>Rutinas según tu nivel y tu tiempo.</p></div><span class="probar">Probar gratis →</span></a>
+                <a class="tarjeta" href="menu.html?f=Economia"><img src="faceta-economia.jpg" alt="Nélida economista" loading="lazy"><div><h3>Economía</h3><p>Ordená tus gastos y armá tu presupuesto.</p></div><span class="probar">Probar gratis →</span></a>
+                <a class="tarjeta" href="menu.html?f=abogada"><img src="faceta-abogada.jpg" alt="Nélida abogada" loading="lazy"><div><h3>Abogada</h3><p>Orientación sobre contratos, trámites y derechos.</p></div><span class="probar">Probar gratis →</span></a>
+                <a class="tarjeta" href="menu.html?f=medica"><img src="faceta-medica.jpg" alt="Nélida médica" loading="lazy"><div><h3>Médica</h3><p>Información de salud y prevención.</p></div><span class="probar">Probar gratis →</span></a>
+                <a class="tarjeta" href="menu.html?f=padel"><img src="faceta-padel.jpg" alt="Nélida coach de pádel" loading="lazy"><div><h3>Coach de pádel</h3><p>Técnica, táctica y entrenamiento.</p></div><span class="probar">Probar gratis →</span></a>
+                <a class="tarjeta" href="menu.html?f=maestra"><img src="faceta-maestra.jpg" alt="Nélida maestra" loading="lazy"><div><h3>Maestra</h3><p>Ayuda con tareas de matemática, física y más.</p></div><span class="probar">Probar gratis →</span></a>
+                <a class="tarjeta" href="menu.html?f=mecanica"><img src="faceta-mecanica.jpg" alt="Nélida mecánica" loading="lazy"><div><h3>Mecánica</h3><p>Diagnóstico y mantenimiento de tu auto.</p></div><span class="probar">Probar gratis →</span></a>
+                <a class="tarjeta" href="menu.html?f=seguridad_higiene"><img src="faceta-seguridad.jpg" alt="Nélida técnica en seguridad e higiene" loading="lazy"><div><h3>Seguridad e higiene</h3><p>Prevención de riesgos, EPP y normativas.</p></div><span class="probar">Probar gratis →</span></a>
             </div>
             <div class="chips" aria-label="Todas las especialidades">
-                <span>Asistente personal</span><span>Artes marciales</span><span>Ayuda y primeros auxilios</span><span>Contratista</span><span>Infantes</span><span>Mejora continua</span><span>Pesca</span><span>Psicóloga</span><span>Sexóloga</span><span>Tenis</span><span>Terapia de parejas</span>
+                <a href="menu.html?f=asistente">Asistente personal</a><a href="menu.html?f=artes_marciales">Artes marciales</a><a href="menu.html?f=ayuda">Ayuda y primeros auxilios</a><a href="menu.html?f=contratista">Contratista</a><a href="menu.html?f=infantes">Infantes</a><a href="menu.html?f=mejora_continua">Mejora continua</a><a href="menu.html?f=pesca">Pesca</a><a href="menu.html?f=psicologa">Psicóloga</a><a href="menu.html?f=sexologa">Sexóloga</a><a href="menu.html?f=tenis">Tenis</a><a href="menu.html?f=terapia_parejas">Terapia de parejas</a>
             </div>
         </div>
     </section>
