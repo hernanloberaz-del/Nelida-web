@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta name="robots" content="noindex, nofollow">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Nélida AI - Interface Pro</title>
@@ -517,7 +518,7 @@
                 if (mapaFondos[facetaActiva]) { document.getElementById('fondo-nelida').src = "versiones_nelida/" + mapaFondos[facetaActiva]; }
                 const nombreLimpio = facetaActiva.replace(/_/g, ' ').toUpperCase();
                 document.getElementById('msg-inicial').innerHTML = `<b>Nélida ${nombreLimpio}:</b> Decime qué necesitas y nos ponemos en marcha.`;
-            } else { window.location.href = "login.html"; }
+            } else { document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:#07070b;font-family:sans-serif;"><div style="max-width:360px;width:100%;text-align:center;color:#e8e8e8;background:#12121a;border:1px solid rgba(0,255,204,.25);border-radius:16px;padding:28px;"><h1 style="color:#fff;margin:0 0 10px;">Nélida <span style="color:#00ffcc">AI</span></h1><p style="margin:0 0 20px;color:#a8a8b3;">Tu sesión no está iniciada. Ingresá a tu cuenta para seguir chateando con Nélida.</p><a href="registro.html" style="display:block;background:#8e44ad;color:#fff;padding:13px;border-radius:10px;text-decoration:none;font-weight:bold;margin-bottom:10px;">Crear cuenta gratis</a><a href="login.html" style="display:block;border:1px solid #00ffcc;color:#fff;padding:12px;border-radius:10px;text-decoration:none;margin-bottom:14px;">Ya tengo cuenta</a><a href="index.html" style="color:#00ffcc;">← Volver al inicio</a></div></div>'; }
         });
 
         document.getElementById('archivoAdjunto').addEventListener('change', function(e) {
