@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta name="robots" content="noindex, nofollow">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NELIDA-AI - Panel de Control Global</title>
@@ -232,7 +233,7 @@
 
         window.cerrarSesionAdmin = async () => {
             await signOut(auth);
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         };
 
         function formatearFecha(timestamp) {
@@ -421,7 +422,9 @@
         onAuthStateChanged(auth, (user) => {
             const esAdmin = user && user.emailVerified && (user.email || "").toLowerCase() === CORREO_ADMIN;
             if (!esAdmin) {
-                window.location.replace('login.html');
+                document.documentElement.style.visibility = 'visible';
+                document.body.style.cssText = 'margin:0;background:#07070b;';
+                document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#e8e8e8;text-align:center;padding:20px;"><div><h1 style="color:#fff;">Página privada</h1><p style="margin:12px 0 20px;color:#a8a8b3;">Esta sección es solo para la administración de Nélida.</p><a href="index.html" style="color:#00ffcc;">← Volver al inicio</a></div></div>';
                 return;
             }
             document.documentElement.style.visibility = 'visible';
