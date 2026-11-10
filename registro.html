@@ -9,7 +9,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -26,10 +26,23 @@
         auth.languageCode = "es"; // el email de verificación llega en español
         const db = getFirestore(app);
 
+        // Faceta elegida en la portada (registro.html?f=trainer): se recuerda para entrar directo después
+        const IDS_VALIDOS = ["abogada","artes_marciales","asistente","ayuda","contratista","Economia","infantes","maestra","mecanica","medica","mejora_continua","trainer","padel","pesca","psicologa","seguridad_higiene","sexologa","tenis","terapia_parejas"];
+        try {
+            const pedida = new URLSearchParams(window.location.search).get('f');
+            if (pedida && IDS_VALIDOS.includes(pedida)) localStorage.setItem('nelida_faceta_elegida', pedida);
+        } catch (e) {}
+
+        // Si ya tiene la sesión iniciada, le ofrecemos ir directo a Nélida (sin saltar solo)
+        onAuthStateChanged(auth, (user) => {
+            const caja = document.getElementById('ya-ingresado');
+            if (user && caja) caja.style.display = 'block';
+        });
+
         // Traduce los errores de Firebase a mensajes claros
         function mensajeDeError(error) {
             switch (error.code) {
-                case 'auth/email-already-in-use': return "❌ Ya existe una cuenta con ese email. Volvé atrás e iniciá sesión (si no recordás la contraseña, usá \"¿Olvidaste tu contraseña?\"). Si te registraste con Google o Facebook, entrá con ese botón.";
+                case 'auth/email-already-in-use': return "❌ Ya existe una cuenta con ese email. Tocá \"Ya tengo cuenta, iniciar sesión\".";
                 case 'auth/invalid-email': return "❌ El formato del email no es válido.";
                 case 'auth/weak-password': return "❌ La contraseña es muy débil. Usá al menos 8 caracteres, mezclando letras y números.";
                 case 'auth/network-request-failed': return "❌ Sin conexión. Revisá tu internet y probá de nuevo.";
@@ -200,11 +213,13 @@
 </head>
 <body>
     <div class="contenedor">
-        <img src="versiones_nelida/sexologa.png" class="img-fondo" alt="Nélida, asistente de inteligencia artificial">
+        <img src="nelida-portada-cel.jpg" class="img-fondo" alt="">
 
         <main class="caja-registro">
             <h2>Crear cuenta en <span>Nélida</span></h2>
             <p class="subtitulo">Asistente de inteligencia artificial con 19 especialidades. Tu cuenta es solo para usar nelida.com.ar.</p>
+
+            <div id="ya-ingresado" style="display:none; background:rgba(0,255,204,0.08); border:1px solid rgba(0,255,204,0.4); border-radius:10px; padding:12px; text-align:center; color:#fff; font-size:13px;">Ya iniciaste sesión en Nélida.<br><a href="menu.html" style="display:inline-block; margin-top:8px; color:#00ffcc; font-weight:bold;">Ir a Nélida →</a></div>
 
             <label class="acepta" style="text-transform:none; letter-spacing:0; font-weight:normal;">
                 <input type="checkbox" id="reg-acepta">
