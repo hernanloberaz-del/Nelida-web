@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    <meta name="robots" content="noindex, nofollow">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Nélida AI - Seleccionar Faceta</title>
@@ -25,6 +26,14 @@
         const db = getFirestore(app);
 
         let usuarioActual = null;
+
+        // Sin sesión: mostramos un cartel con botones (nunca saltamos solos al login)
+        function pantallaSinSesion(titulo, texto) {
+            document.documentElement.style.visibility = 'visible';
+            document.title = 'Nélida AI';
+            document.body.style.cssText = 'margin:0;padding:0;display:block;background:#07070b;';
+            document.body.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;font-family:'Segoe UI',-apple-system,sans-serif;"><div style="max-width:360px;width:100%;text-align:center;color:#e8e8e8;background:#12121a;border:1px solid rgba(0,255,204,.25);border-radius:16px;padding:28px;box-sizing:border-box;"><h1 style="color:#fff;font-size:1.5em;margin:0 0 10px;">Nélida <span style="color:#00ffcc">AI</span></h1><p style="margin:0 0 6px;font-weight:bold;color:#fff;">${titulo}</p><p style="margin:0 0 20px;line-height:1.5;color:#a8a8b3;">${texto}</p><a href="registro.html" style="display:block;background:#8e44ad;color:#fff;padding:13px;border-radius:10px;text-decoration:none;font-weight:bold;margin-bottom:10px;">Crear cuenta gratis</a><a href="login.html" style="display:block;border:1px solid #00ffcc;color:#fff;padding:12px;border-radius:10px;text-decoration:none;margin-bottom:14px;">Ya tengo cuenta</a><a href="index.html" style="color:#00ffcc;font-size:.9em;text-decoration:none;">← Volver al inicio</a></div></div>`;
+        }
 
         // Faceta elegida desde la portada (menu.html?f=trainer). Se guarda por si hay que registrarse antes.
         const IDS_VALIDOS = ["abogada","artes_marciales","asistente","ayuda","contratista","Economia","infantes","maestra","mecanica","medica","mejora_continua","trainer","padel","pesca","psicologa","seguridad_higiene","sexologa","tenis","terapia_parejas"];
@@ -62,9 +71,7 @@
                 }
 
             } else { 
-                // Sin cuenta: primero se registra (la faceta elegida queda guardada)
-                const elegida = (() => { try { return localStorage.getItem('nelida_faceta_elegida'); } catch (e) { return null; } })();
-                window.location.href = elegida ? "registro.html" : "login.html"; 
+                pantallaSinSesion('Elegí tu Nélida', 'Para usar Nélida necesitás una cuenta. Es gratis y tenés 10 mensajes de prueba.');
             }
         });
 
