@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /menu.html
+Disallow: /interaccion.html
+Disallow: /checkout.html
+Disallow: /control.html
+
+Sitemap: https://nelida.com.ar/sitemap.xml
